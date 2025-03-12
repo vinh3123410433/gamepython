@@ -8,6 +8,13 @@ class Enemy:
         self.y = y
         self.level = level
         self.target = None
+
+        #enemy image
+        self.enemy= pygame.image.load("game/resources/monsters/Orc/Orc-Walk.png").convert_alpha()
+        # self.enemy= pygame.transform.scale2x(self.enemy)
+        self.enemy= self.enemy.subsurface((0, 0, 100, 100))
+        self.enemy= pygame.transform.flip(self.enemy, True, False)
+        self.enemy_rect= self.enemy.get_rect(center=(int(self.x), int(self.y)))
         
         # Set properties based on level
         if level == 1:  # Basic enemy
@@ -70,9 +77,14 @@ class Enemy:
         return self.health <= 0
         
     def draw(self, screen):
-        # Draw enemy
-        pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
-        
+        # Draw enemy old
+        #pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.radius)
+
+        # Draw enemy new
+        screen.blit(self.enemy, self.enemy_rect)
+        self.enemy_rect.centerx= int(self.x)
+        self.enemy_rect.centery= int(self.y)
+
         # Draw health bar
         health_width = (self.health / self.max_health) * (self.radius * 2)
         pygame.draw.rect(screen, (0, 255, 0),
