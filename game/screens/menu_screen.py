@@ -6,6 +6,10 @@ class MenuScreen:
         self.game_state = game_state
         self.font = pygame.font.Font(None, 36)
         
+        # Tải ảnh nền lênlên
+        self.background = pygame.image.load('game/resources/bg/art-7109163_1280.jpg').convert()
+        self.background = pygame.transform.scale(self.background, self.screen.get_size())
+
         # Menu buttons
         self.buttons = [
             {"text": "Start Game", "rect": pygame.Rect(500, 300, 280, 50)},
@@ -33,8 +37,8 @@ class MenuScreen:
         pass
         
     def draw(self):
-        # Draw background
-        self.screen.fill((0, 0, 0))
+        # Hiện cái ảnh ngoài màn hình
+        self.screen.blit(self.background, (0, 0))
         
         # Draw title
         title = self.font.render("Math Tower Defense", True, (255, 255, 255))
