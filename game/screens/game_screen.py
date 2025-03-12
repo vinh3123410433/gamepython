@@ -5,6 +5,10 @@ from game.entities.enemy import Enemy
 
 class GameScreen:
     def __init__(self, screen, game_state):
+        #new background
+        self.background= pygame.image.load("game/resources/bg/art-7109163_1280.jpg")
+        self.background= pygame.transform.scale(self.background, (1280, 720))
+
         self.screen = screen
         self.game_state = game_state
         self.font = pygame.font.Font(None, 24)
@@ -164,8 +168,11 @@ class GameScreen:
         
     def draw(self):
         # Vẽ nền
-        self.screen.fill((50, 50, 50))
+        #self.screen.fill((50, 50, 50))
         
+        # Vẽ nền mới(có ảnh)
+        self.screen.blit(self.background, (0,0))
+
         # Vẽ đường đi
         pygame.draw.rect(self.screen, (100, 100, 100), (100, 300, 1080, 120))
         
