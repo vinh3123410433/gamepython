@@ -62,8 +62,8 @@ class GameState:
         self.cooldown = 0  # Reset cooldown khi chọn câu hỏi mới
         
         if difficulty == 1:  # Easy
-            a = random.randint(1, 100)
-            b = random.randint(1, 100)
+            a = random.randint(1, 1000)
+            b = random.randint(1, 1000)
 
             if 10 <= a <= 99 and 10 <= b <= 99:
                 operator = random.choice(['+', '-', '*'])
@@ -167,3 +167,4 @@ class GameState:
     def block_enemy_spawn(self, duration):
         self.enemy_spawn_blocked = True
         self.enemy_spawn_block_timer = duration 
+        
