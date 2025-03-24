@@ -29,11 +29,11 @@ colors = { # R,G,B
     'brown':    (110,73,32),}
 
 # Optional music
-def play_music(file, volume=0.65, loop=-1):
-    pygame.mixer.music.load(file)
-    # load music from file mp3
-    pygame.mixer.music.set_volume(volume)
-    pygame.mixer.music.play(loop)
+# def play_music(file, volume=0.65, loop=-1):
+#     pygame.mixer.music.load(file)
+#     # load music from file mp3
+#     pygame.mixer.music.set_volume(volume)
+#     pygame.mixer.music.play(loop)
 # comment out if you don't want music
 
 def stop_music(): pygame.mixer.music.stop()
@@ -188,6 +188,19 @@ class Enemy:
         if (a[0]-c[0])**2 + (a[1]-c[1])**2 >(b[0]-c[0])**2 + (b[1]-c[1])**2: self.next_target()
         self.rect.center = self.pos
         self.distance+=speed
+    def draw_health_bar(self, screen):
+        # Vẽ thanh máu trên đầu kẻ địch
+        bar_width = self.rect.width
+        bar_height = 5  # Chiều cao thanh máu
+
+        # Tỷ lệ máu còn lại
+        current_health_ratio = self.health / self.layers[self.layer][1]
+
+        # Vẽ thanh máu (viền đỏ)
+        pygame.draw.rect(screen, (255, 0, 0), (self.rect.left, self.rect.top - bar_height, bar_width, bar_height))
+
+        # Vẽ thanh máu còn lại (xanh lá)
+        pygame.draw.rect(screen, (0, 255, 0), (self.rect.left, self.rect.top - bar_height, bar_width * current_health_ratio, bar_height))
 
 class Tower:
     def __init__(self,pos):
@@ -411,10 +424,13 @@ def main():
             elif d<2580: z0+=[enemy]
             else: z0+=[enemy]
 
-        for enemy in z0: enemy.move(frametime); screen.blit(enemy.image,enemy.rect)
-        screen.blit(t1,(0,0))
-        screen.blit(t2,(0,0))
-        for enemy in z1: enemy.move(frametime); screen.blit(enemy.image,enemy.rect)
+        for enemy in z0:
+         enemy.move(frametime)
+         screen.blit(enemy.image,enemy.rect)
+         enemy.draw_health_bar(screen)
+         screen.blit(t1,(0,0))
+         screen.blit(t2,(0,0))
+        for enemy in z1: enemy.move(frametime); screen.blit(enemy.image,enemy.rect); enemy.draw_health_bar(screen)
 
         for tower in towerList: tower.takeTurn(frametime,screen); drawTower(screen,tower,selected)
 
