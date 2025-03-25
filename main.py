@@ -404,7 +404,7 @@ def main():
     speed = 3
     wave = 1
     # optional music
-    play_music('music/maintheme.mp3')
+    #play_music('music/maintheme.mp3')
     # application running
     while True:
         starttime = time.time()
