@@ -58,10 +58,10 @@ class Player:
         'Spike Factory',
         'Road Spikes',
         'Exploding Pineapple',]
-
+    # ban đầu 
     def __init__(self):
-        self.health = 100
-        self.money = 650
+        self.health = 10 # health start
+        self.money = 30000000 # money start
 
 player = Player()
 
@@ -243,9 +243,9 @@ class createTower(Tower):
 
 class Icon:
     # adjust icons of the towers here
-    towers = { # Cost Fire Rate Range Damage
+    towers = { # Cost Fire speed Range Damage
         'Dart Monkey'         : [ 215, 1.3, 100, 1],
-        # [ Cost, Fire Rate, Range, Damage]
+        # [ Cost, Fire speed , Range, Damage]
         'Tack Shooter'        : [ 360, 1.0, 70, 1],
         'Sniper Monkey'       : [ 430, 2.9, 300, 2],
         'Boomerang Thrower'   : [ 430, 1.0, 90, 1],
@@ -259,7 +259,6 @@ class Icon:
         'Spike Factory'       : [ 650, 2.0, 40, 1],
         'Road Spikes'         : [  30, 5.0, 40, 1],
         'Exploding Pineapple' : [  25, 2.0, 60, 1],}
-    # based off the official 2011 Ninja Kiwi game
 
     def __init__(self,tower):
         # initalize tower and it's properties
@@ -446,7 +445,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
+    
