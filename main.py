@@ -390,7 +390,6 @@ def main():
     # load values of heart (lives), money (cash to spend), and plank interface
     heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
     w,h = plank.get_size()
-    screen = pygame.display.set_mode((screenWidth- w,screenHeight))
     for y in range(screenHeight//h): background.blit(plank,(screenWidth-w,y*h))
     for y in range(3):
         for x in range(screenWidth//w): background.blit(plank,(x*w,screenHeight-(y+1)*h))
@@ -399,7 +398,7 @@ def main():
     
     level_img,t1,t2 = mapvar.get_background()
     loadImages()
-    for tower in player.towers: Icon(tower)
+    # for tower in player.towers: Icon(tower)
     selected = None
     speed = 3
     wave = 1
