@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import pygame, sys, os, time, math
 
+pos=[]
+
 # Width screen. Pixels
 screenWidth = 800
 # Height screen
@@ -114,8 +116,8 @@ class Map:
         background = imgLoad('maps/%s/image.png' % self.map)
         background2 = imgLoad('maps/%s/image2.png' % self.map).convert_alpha()
         background3 = imgLoad('maps/%s/image3.png' % self.map).convert_alpha()
-        for i in range(len(self.targets)-1):
-            pygame.draw.line(background,(0,0,0),self.targets[i],self.targets[i+1])
+        # for i in range(len(self.targets)-1):
+        #     pygame.draw.line(background,(0,0,0),self.targets[i],self.targets[i+1])
 
         return background,background2,background3
 
@@ -347,23 +349,20 @@ class Sender:
         else: self.timer = self.rate; Enemy(self.enemies[0]); del self.enemies[0]
         return wave
 
-def workEvents(selected,wave,speed):
+def workEvents(selected,wave,speed, pos, drawing):
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-
-            if selected in towerList: selected = None
-            elif selected in iconList:
-                if player.money>=selected.cost:
-                    rect = selected.img.get_rect(center=event.pos)
-                    collide = False
-                    if not collide: player.money-=selected.cost; selected = createTower(selected.tower,event.pos,selected.towers[selected.tower])
-
-            for obj in iconList + (towerList if not selected else []):
-                if obj.rect.collidepoint(event.pos): selected = obj; break
-
-        elif event.type == pygame.KEYDOWN:
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            drawing = True
+            pos= [pygame.mouse.get_pos()]
+        if event.type == pygame.MOUSEMOTION and drawing== True:
+            mpos= pygame.mouse.get_pos()
+            pos.append(mpos)
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            drawing = False
+            pos=[]
+        if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE and not enemyList:
                 if wave<=len(mapvar.waves): Sender(wave)
                 else: print('Congratulations!! You survived the swarm')
@@ -371,7 +370,8 @@ def workEvents(selected,wave,speed):
             if event.key == pygame.K_k and selected in towerList: player.money+=int(selected.cost*0.9); towerList.remove(selected); selected = None
             if event.key == pygame.K_w and speed<10: speed+=1
             if event.key == pygame.K_s and speed>1: speed-=1
-    return selected,wave,speed
+        
+    return selected,wave,speed, pos, drawing
 
 # main file
 def main():
@@ -385,6 +385,10 @@ def main():
     font = pygame.font.Font(None,20)
 
     mapvar.getmovelist()
+    
+
+    drawing= False
+    pos=[]
 
     background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
     # load values of heart (lives), money (cash to spend), and plank interface
@@ -398,12 +402,12 @@ def main():
     
     level_img,t1,t2 = mapvar.get_background()
     loadImages()
-    # for tower in player.towers: Icon(tower)
+    # for tower in player.towers: Icon(tower) #vẽ tower
     selected = None
     speed = 3
     wave = 1
     # optional music
-    #play_music('music/maintheme.mp3')
+    play_music('music/maintheme.mp3')
     # application running
     while True:
         starttime = time.time()
@@ -437,10 +441,15 @@ def main():
         screen.blit(background,(0,0))
 
         for icon in iconList: drawIcon(screen,icon,mpos,font)
-        selected,wave,speed = workEvents(selected,wave,speed)
+        selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
         if selected and selected.__class__ == Icon: selectedIcon(screen,selected)
+        surface_temp= pygame.Surface((800,600)).convert_alpha()
+        surface_temp.fill((0,0,0,0))
+        if (len(pos)>1):
+            pygame.draw.lines(surface_temp, (255, 0, 0), False, pos, 2)
         dispText(screen,wave)
-
+        screen.blit(surface_temp,(0,0))
+        print(pos, drawing)
         pygame.display.flip()
 
 if __name__ == '__main__':
