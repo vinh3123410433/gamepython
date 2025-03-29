@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pygame, sys, os, time, math
+import pygame, sys, os, time, math, cv2, numpy
 
 pos=[]
 
@@ -373,6 +373,21 @@ def workEvents(selected,wave,speed, pos, drawing):
         
     return selected,wave,speed, pos, drawing
 
+def detect(surface_temp):
+    img= pygame.surfarray.array3d(surface_temp)
+    img= numpy.transpose(img, (1, 0, 2))
+    img= cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _,thresh= cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+    contours,_= cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if len(contours) > 0:
+        epsilon = 0.04 * cv2.arcLength(contours[0], True)  # Độ chính xác khoảng 4% chu vi
+        approx = cv2.approxPolyDP(contours[0], epsilon, True)
+        if len(approx) == 3:
+            return True
+    cv2.imshow("hehe",img)
+    return False
+
 # main file
 def main():
     pygame.init()
@@ -402,7 +417,7 @@ def main():
     
     level_img,t1,t2 = mapvar.get_background()
     loadImages()
-    # for tower in player.towers: Icon(tower) #vẽ tower
+    for tower in player.towers: Icon(tower) #vẽ tower
     selected = None
     speed = 3
     wave = 1
@@ -446,10 +461,14 @@ def main():
         surface_temp= pygame.Surface((800,600)).convert_alpha()
         surface_temp.fill((0,0,0,0))
         if (len(pos)>1):
-            pygame.draw.lines(surface_temp, (255, 0, 0), False, pos, 2)
+            pygame.draw.lines(surface_temp, (255, 255, 255), False, pos, 2)
         dispText(screen,wave)
+        if detect(surface_temp):
+            font = pygame.font.SysFont('arial', 22)
+            text= font.render("Ban da ve hinh tam giac", 2, (255,255,255))
+            surface_temp.blit(text, (screenWidth//2- w, screenHeight -2*h))
         screen.blit(surface_temp,(0,0))
-        print(pos, drawing)
+        # print(pos, drawing)
         pygame.display.flip()
 
 if __name__ == '__main__':
