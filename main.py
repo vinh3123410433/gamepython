@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pygame, sys, os, time, math, cv2, numpy
+import pygame, sys, os, time, math, random, cv2, numpy
 
 pos=[]
 
@@ -143,6 +143,9 @@ class Enemy:
         self.next_target()
         self.rect = self.image.get_rect(center=self.pos)
         self.distance = 0
+        # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
+        self.shape_type = random.randint(0, 3)
+        self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
     def setLayer(self): 
@@ -203,6 +206,38 @@ class Enemy:
 
         # Vẽ thanh máu còn lại (xanh lá)
         pygame.draw.rect(screen, (0, 255, 0), (self.rect.left, self.rect.top - bar_height, bar_width * current_health_ratio, bar_height))
+
+        # Vẽ hình học
+        shape_size = 10
+        shape_y = self.rect.top - bar_height - shape_size - 5  # Vị trí y của hình
+        
+        if self.shape_type == 0:
+            # Vẽ tam giác
+            points = [
+                (self.rect.centerx, shape_y),
+                (self.rect.centerx - shape_size//2, shape_y + shape_size),
+                (self.rect.centerx + shape_size//2, shape_y + shape_size)
+            ]
+            pygame.draw.polygon(screen, self.shape_color, points)
+        elif self.shape_type == 1:
+            # Vẽ hình vuông
+            square_rect = pygame.Rect(
+                self.rect.centerx - shape_size//2,
+                shape_y,
+                shape_size,
+                shape_size
+            )
+            pygame.draw.rect(screen, self.shape_color, square_rect)
+        elif self.shape_type == 2:
+            # Vẽ hình chữ nhật
+            rect_width = shape_size * 1.5
+            rect_height = shape_size
+            rect_x = self.rect.centerx - rect_width//2
+            rect_y = shape_y
+            pygame.draw.rect(screen, self.shape_color, (rect_x, rect_y, rect_width, rect_height))
+        else:
+            # Vẽ hình tròn
+            pygame.draw.circle(screen, self.shape_color, (self.rect.centerx, shape_y + shape_size//2), shape_size//2)
 
 class Tower:
     def __init__(self,pos):
