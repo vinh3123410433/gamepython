@@ -409,19 +409,36 @@ def workEvents(selected,wave,speed, pos, drawing):
     return selected,wave,speed, pos, drawing
 
 def detect(surface_temp):
-    img= pygame.surfarray.array3d(surface_temp)
-    img= numpy.transpose(img, (1, 0, 2))
-    img= cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    gray= cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _,thresh= cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
-    contours,_= cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    img = pygame.surfarray.array3d(surface_temp)
+    img = numpy.transpose(img, (1, 0, 2))
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if len(contours) > 0:
-        epsilon = 0.04 * cv2.arcLength(contours[0], True)  # Độ chính xác khoảng 4% chu vi
-        approx = cv2.approxPolyDP(contours[0], epsilon, True)
+        contour = max(contours, key=cv2.contourArea)  # Use the largest contour
+        if cv2.contourArea(contour) < 100:  # Ignore small shapes
+            return None
+
+        epsilon = 0.02 * cv2.arcLength(contour, True)  # Approximation accuracy
+        approx = cv2.approxPolyDP(contour, epsilon, True)
+
         if len(approx) == 3:
-            return True
-    cv2.imshow("hehe",img)
-    return False
+            return "triangle"
+        elif len(approx) == 4:
+            x, y, w, h = cv2.boundingRect(approx)
+            aspect_ratio = float(w) / h
+            if 0.95 <= aspect_ratio <= 1.05:  # Narrower range for square detection
+                return "square"
+            else:
+                return "rectangle"
+        elif len(approx) > 4:
+            (x, y), radius = cv2.minEnclosingCircle(contour)
+            circle_area = math.pi * (radius ** 2)
+            contour_area = cv2.contourArea(contour)
+            if abs(circle_area - contour_area) / circle_area < 0.1:  # Reduced threshold for circle detection
+                return "circle"
+    return None
 
 # main file
 def main():
@@ -498,10 +515,24 @@ def main():
         if (len(pos)>1):
             pygame.draw.lines(surface_temp, (255, 255, 255), False, pos, 2)
         dispText(screen,wave)
-        if detect(surface_temp):
-            font = pygame.font.SysFont('arial', 22)
-            text= font.render("Ban da ve hinh tam giac", 2, (255,255,255))
-            surface_temp.blit(text, (screenWidth//2- w, screenHeight -2*h))
+        if len(pos) > 10:  # Ensure enough points are drawn before detecting shapes
+            shape_detected = detect(surface_temp)
+            if shape_detected == "triangle":
+                font = pygame.font.SysFont('arial', 22)
+                text = font.render("Ban da ve hinh tam giac", 2, (255, 255, 255))
+                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+            elif shape_detected == "square":
+                font = pygame.font.SysFont('arial', 22)
+                text = font.render("Ban da ve hinh vuong", 2, (255, 255, 255))
+                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+            elif shape_detected == "rectangle":
+                font = pygame.font.SysFont('arial', 22)
+                text = font.render("Ban da ve hinh chu nhat", 2, (255, 255, 255))
+                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+            elif shape_detected == "circle":
+                font = pygame.font.SysFont('arial', 22)
+                text = font.render("Ban da ve hinh tron", 2, (255, 255, 255))
+                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
         screen.blit(surface_temp,(0,0))
         # print(pos, drawing)
         pygame.display.flip()
