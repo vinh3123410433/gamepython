@@ -178,7 +178,11 @@ class Enemy:
             player.money+=self.cashprize
             self.nextLayer() if self.layer>0 else self.kill()
 
-    def kill(self): enemyList.remove(self)
+    def kill(self):
+        if self in enemyList:
+            enemyList.remove(self)
+        # Add optional effects or sounds for smoother feedback
+        print(f"Enemy {self.name} popped!")
 
     def move(self,frametime):
         speed = frametime*fps*self.speed
@@ -440,6 +444,29 @@ def detect(surface_temp):
                 return "circle"
     return None
 
+def check_collision_with_enemies(drawn_shape, surface_temp):
+    img = pygame.surfarray.array3d(surface_temp)
+    img = numpy.transpose(img, (1, 0, 2))
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if len(contours) > 0:
+        contour = max(contours, key=cv2.contourArea)  # Use the largest contour
+        contour_rect = cv2.boundingRect(contour)  # Get bounding box of the drawn shape
+
+        for enemy in enemyList[:]:  # Iterate over a copy of the list
+            if enemy.rect.colliderect(contour_rect):  # Check if the drawn shape overlaps the enemy
+                if enemy.shape_type == 0 and drawn_shape == "triangle":
+                    enemy.kill()
+                elif enemy.shape_type == 1 and drawn_shape == "square":
+                    enemy.kill()
+                elif enemy.shape_type == 2 and drawn_shape == "rectangle":
+                    enemy.kill()
+                elif enemy.shape_type == 3 and drawn_shape == "circle":
+                    enemy.kill()
+
 # main file
 def main():
     pygame.init()
@@ -517,22 +544,24 @@ def main():
         dispText(screen,wave)
         if len(pos) > 10:  # Ensure enough points are drawn before detecting shapes
             shape_detected = detect(surface_temp)
-            if shape_detected == "triangle":
-                font = pygame.font.SysFont('arial', 22)
-                text = font.render("Ban da ve hinh tam giac", 2, (255, 255, 255))
-                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-            elif shape_detected == "square":
-                font = pygame.font.SysFont('arial', 22)
-                text = font.render("Ban da ve hinh vuong", 2, (255, 255, 255))
-                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-            elif shape_detected == "rectangle":
-                font = pygame.font.SysFont('arial', 22)
-                text = font.render("Ban da ve hinh chu nhat", 2, (255, 255, 255))
-                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-            elif shape_detected == "circle":
-                font = pygame.font.SysFont('arial', 22)
-                text = font.render("Ban da ve hinh tron", 2, (255, 255, 255))
-                surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+            if shape_detected:
+                check_collision_with_enemies(shape_detected, surface_temp)
+                if shape_detected == "triangle":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve hinh tam giac", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                elif shape_detected == "square":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve hinh vuong", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                elif shape_detected == "rectangle":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve hinh chu nhat", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                elif shape_detected == "circle":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve hinh tron", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
         screen.blit(surface_temp,(0,0))
         # print(pos, drawing)
         pygame.display.flip()
