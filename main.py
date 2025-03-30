@@ -389,15 +389,24 @@ class Sender:
         else: self.timer = self.rate; Enemy(self.enemies[0]); del self.enemies[0]
         return wave
 
-def workEvents(selected,wave,speed, pos, drawing):
+def workEvents(selected, wave, speed, pos, drawing):
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
         if event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             drawing = True
             pos= [pygame.mouse.get_pos()]
-        if event.type == pygame.MOUSEMOTION and drawing== True:
-            mpos= pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEMOTION and drawing == True:
+            mpos = pygame.mouse.get_pos()
+            if len(pos) > 0:
+                last_pos = pos[-1]
+                dx = mpos[0] - last_pos[0]
+                dy = mpos[1] - last_pos[1]
+                dist = max(abs(dx), abs(dy))
+                for i in range(dist):
+                    x = last_pos[0] + dx * i / dist
+                    y = last_pos[1] + dy * i / dist
+                    pos.append((int(x), int(y)))
             pos.append(mpos)
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             drawing = False
@@ -418,31 +427,45 @@ def detect(surface_temp):
     img = numpy.transpose(img, (1, 0, 2))
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
+    
+    kernel = numpy.ones((5,5), numpy.uint8)
+    thresh = cv2.dilate(thresh, kernel, iterations=1)
+    
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
     if len(contours) > 0:
-        contour = max(contours, key=cv2.contourArea)  # Use the largest contour
-        if cv2.contourArea(contour) < 100:  # Ignore small shapes
+        contour = max(contours, key=cv2.contourArea)
+        if cv2.contourArea(contour) < 500:
             return None
 
-        epsilon = 0.02 * cv2.arcLength(contour, True)  # Approximation accuracy
-        approx = cv2.approxPolyDP(contour, epsilon, True)
-
-        if len(approx) == 3:
-            return "triangle"
-        elif len(approx) == 4:
-            x, y, w, h = cv2.boundingRect(approx)
-            aspect_ratio = float(w) / h
-            if 0.95 <= aspect_ratio <= 1.05:  # Narrower range for square detection
-                return "square"
-            else:
-                return "rectangle"
-        elif len(approx) > 4:
-            (x, y), radius = cv2.minEnclosingCircle(contour)
-            circle_area = math.pi * (radius ** 2)
-            contour_area = cv2.contourArea(contour)
-            if abs(circle_area - contour_area) / circle_area < 0.1:  # Reduced threshold for circle detection
-                return "circle"
+        x, y, w, h = cv2.boundingRect(contour)
+        
+        if len(contour) >= 2:
+            [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
+            angle = math.degrees(math.atan2(vy, vx))
+            
+            if (-20 <= angle <= 20) or (160 <= angle <= 200):
+                if w > h * 2:
+                    return "horizontal"
+            
+            elif (70 <= angle <= 110) or (-110 <= angle <= -70):
+                if h > w * 2:
+                    return "vertical"
+            
+            elif 25 <= angle <= 65:
+                if abs(w - h) < min(w, h) * 0.5:
+                    return "diagonal_right"
+            
+            elif len(contour) > 10:
+                hull = cv2.convexHull(contour)
+                if len(hull) >= 5:
+                    hull_area = cv2.contourArea(hull)
+                    contour_area = cv2.contourArea(contour)
+                    # Refine the v_shape detection to avoid conflicts with diagonal_left
+                    if contour_area / hull_area < 0.75 and w > h * 0.8 and h > w * 0.8:
+                        return "v_shape"
+    
     return None
 
 def check_collision_with_enemies(drawn_shape, surface_temp):
@@ -450,29 +473,27 @@ def check_collision_with_enemies(drawn_shape, surface_temp):
     img = numpy.transpose(img, (1, 0, 2))
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if len(contours) > 0:
-        contour = max(contours, key=cv2.contourArea)  # Use the largest contour
-        contour_rect = cv2.boundingRect(contour)  # Get bounding box of the drawn shape
+        contour = max(contours, key=cv2.contourArea)
+        contour_rect = cv2.boundingRect(contour)
 
-        for enemy in enemyList[:]:  # Iterate over a copy of the list
-            if enemy.rect.colliderect(contour_rect):  # Check if the drawn shape overlaps the enemy
-                if enemy.shape_type == 0 and drawn_shape == "triangle":
+        for enemy in enemyList[:]:
+            if enemy.rect.colliderect(contour_rect):
+                if enemy.shape_type == 0 and drawn_shape == "horizontal":
                     enemy.kill()
-                elif enemy.shape_type == 1 and drawn_shape == "square":
+                elif enemy.shape_type == 1 and drawn_shape == "vertical":
                     enemy.kill()
-                elif enemy.shape_type == 2 and drawn_shape == "rectangle":
+                elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
                     enemy.kill()
-                elif enemy.shape_type == 3 and drawn_shape == "circle":
+                elif enemy.shape_type == 4 and drawn_shape == "v_shape":
                     enemy.kill()
 
 # main file
 def main():
     pygame.init()
-    # https://www.pygame.org/docs/ref/pygame.html
-
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pygame.display.set_caption('Bloons Tower Defence')
     screen = pygame.display.set_mode((screenWidth,screenHeight))
@@ -486,7 +507,6 @@ def main():
     pos=[]
 
     background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
-    # load values of heart (lives), money (cash to spend), and plank interface
     heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
     w,h = plank.get_size()
     for y in range(screenHeight//h): background.blit(plank,(screenWidth-w,y*h))
@@ -497,13 +517,11 @@ def main():
     
     level_img,t1,t2 = mapvar.get_background()
     loadImages()
-    for tower in player.towers: Icon(tower) #vẽ tower
+    for tower in player.towers: Icon(tower)
     selected = None
     speed = 3
     wave = 1
-    # optional music
     play_music('music/maintheme.mp3')
-    # application running
     while True:
         starttime = time.time()
         clock.tick(fps)
@@ -537,34 +555,36 @@ def main():
 
         for icon in iconList: drawIcon(screen,icon,mpos,font)
         selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
-        if selected and selected.__class__ == Icon: selectedIcon(screen,selected)
         surface_temp= pygame.Surface((800,600)).convert_alpha()
         surface_temp.fill((0,0,0,0))
         if (len(pos)>1):
-            pygame.draw.lines(surface_temp, (255, 255, 255), False, pos, 2)
+            pygame.draw.aalines(surface_temp, (255, 255, 255), False, pos, 8)
+            if drawing:
+                guide_surface = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
+                pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
+                screen.blit(guide_surface, (0, 0))
         dispText(screen,wave)
-        if len(pos) > 10:  # Ensure enough points are drawn before detecting shapes
+        if len(pos) > 10:
             shape_detected = detect(surface_temp)
             if shape_detected:
                 check_collision_with_enemies(shape_detected, surface_temp)
-                if shape_detected == "triangle":
+                if shape_detected == "horizontal":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve hinh tam giac", 2, (255, 255, 255))
+                    text = font.render("Ban da ve gạch ngang", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                elif shape_detected == "square":
+                elif shape_detected == "vertical":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve hinh vuong", 2, (255, 255, 255))
+                    text = font.render("Ban da ve gạch đứng", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                elif shape_detected == "rectangle":
+                elif shape_detected == "diagonal_right":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve hinh chu nhat", 2, (255, 255, 255))
+                    text = font.render("Ban da ve gạch chéo phải", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                elif shape_detected == "circle":
+                elif shape_detected == "v_shape":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve hinh tron", 2, (255, 255, 255))
+                    text = font.render("Ban da ve hình chữ V", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
         screen.blit(surface_temp,(0,0))
-        # print(pos, drawing)
         pygame.display.flip()
 
 if __name__ == '__main__':
