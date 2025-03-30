@@ -570,19 +570,19 @@ def main():
                 check_collision_with_enemies(shape_detected, surface_temp)
                 if shape_detected == "horizontal":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve gạch ngang", 2, (255, 255, 255))
+                    text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                 elif shape_detected == "vertical":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve gạch đứng", 2, (255, 255, 255))
+                    text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                 elif shape_detected == "diagonal_right":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve gạch chéo phải", 2, (255, 255, 255))
+                    text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                 elif shape_detected == "v_shape":
                     font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve hình chữ V", 2, (255, 255, 255))
+                    text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
         screen.blit(surface_temp,(0,0))
         pygame.display.flip()
