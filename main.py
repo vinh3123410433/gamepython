@@ -153,7 +153,12 @@ class Enemy:
         self.image = EnemyImageArray[self.name]
 
     def nextLayer(self): 
+        old = self.shape_type
+        valid_numbers = [n for n in range(0, 3) if n !=old]
+        new = random.choice(valid_numbers)
+        self.shape_type= new
         self.layer-=1; self.setLayer()
+        if self.layer== -1: self.kill()
 
     def next_target(self):
         # check if bloons reached the ending
@@ -468,7 +473,7 @@ def detect(surface_temp):
     
     return None
 
-def check_collision_with_enemies(drawn_shape, surface_temp):
+def check_collision_with_enemies(drawn_shape, surface_temp, screen):
     img = pygame.surfarray.array3d(surface_temp)
     img = numpy.transpose(img, (1, 0, 2))
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
@@ -483,13 +488,21 @@ def check_collision_with_enemies(drawn_shape, surface_temp):
         for enemy in enemyList[:]:
             # if enemy.rect.colliderect(contour_rect):
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
-                    enemy.kill()
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
-                    enemy.kill()
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
-                    enemy.kill()
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 4 and drawn_shape == "v_shape":
-                    enemy.kill()
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
 
 # main file
 def main():
@@ -517,7 +530,7 @@ def main():
     
     level_img,t1,t2 = mapvar.get_background()
     loadImages()
-    for tower in player.towers: Icon(tower)
+    # for tower in player.towers: Icon(tower)
     selected = None
     speed = 3
     wave = 1
@@ -567,7 +580,7 @@ def main():
         if len(pos) > 10:
             shape_detected = detect(surface_temp)
             if shape_detected:
-                check_collision_with_enemies(shape_detected, surface_temp)
+                check_collision_with_enemies(shape_detected, surface_temp, screen)
                 if shape_detected == "horizontal":
                     font = pygame.font.SysFont('arial', 22)
                     text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
@@ -589,3 +602,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+#'20*1','30*1',
