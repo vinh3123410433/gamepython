@@ -499,7 +499,7 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                     # enemy.kill()
                     enemy.nextLayer()
                     enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 4 and drawn_shape == "v_shape":
+                elif enemy.shape_type == 3 and drawn_shape == "v_shape":
                     # enemy.kill()
                     enemy.nextLayer()
                     enemy.draw_health_bar(screen)
