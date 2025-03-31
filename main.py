@@ -240,7 +240,7 @@ class Enemy:
             #pygame.draw.line(screen, self.shape_color,
                            #(self.rect.centerx - line_length//2, line_y + line_length//2),
                            #(self.rect.centerx + line_length//2, line_y - line_length//2), 2)
-        else:
+        elif self.shape_type == 3:
             # Vẽ chữ V
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
