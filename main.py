@@ -481,7 +481,7 @@ def check_collision_with_enemies(drawn_shape, surface_temp):
         contour_rect = cv2.boundingRect(contour)
 
         for enemy in enemyList[:]:
-            if enemy.rect.colliderect(contour_rect):
+            # if enemy.rect.colliderect(contour_rect):
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
                     enemy.kill()
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
