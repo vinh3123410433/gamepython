@@ -235,7 +235,7 @@ class Enemy:
             #pygame.draw.line(screen, self.shape_color,
                            #(self.rect.centerx - line_length//2, line_y + line_length//2),
                            #(self.rect.centerx + line_length//2, line_y - line_length//2), 2)
-        else:
+        elif self.shape_type == 3:
             # Vẽ chữ V
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
@@ -488,7 +488,7 @@ def check_collision_with_enemies(drawn_shape, surface_temp):
                     enemy.kill()
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
                     enemy.kill()
-                elif enemy.shape_type == 4 and drawn_shape == "v_shape":
+                elif enemy.shape_type == 3 and drawn_shape == "v_shape":
                     enemy.kill()
 
 # main file
