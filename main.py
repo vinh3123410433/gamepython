@@ -144,7 +144,7 @@ class Enemy:
         self.rect = self.image.get_rect(center=self.pos)
         self.distance = 0
         # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
-        self.shape_type = random.randint(0, 4)
+        self.shape_type = random.randint(0, 3)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
@@ -230,11 +230,11 @@ class Enemy:
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx + line_length//2, line_y + line_length//2), 2)
-        elif self.shape_type == 3:
+        #elif self.shape_type == 3:
             # Vẽ gạch chéo lên
-            pygame.draw.line(screen, self.shape_color,
-                           (self.rect.centerx - line_length//2, line_y + line_length//2),
-                           (self.rect.centerx + line_length//2, line_y - line_length//2), 2)
+            #pygame.draw.line(screen, self.shape_color,
+                           #(self.rect.centerx - line_length//2, line_y + line_length//2),
+                           #(self.rect.centerx + line_length//2, line_y - line_length//2), 2)
         else:
             # Vẽ chữ V
             pygame.draw.line(screen, self.shape_color,
