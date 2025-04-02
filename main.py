@@ -618,7 +618,7 @@ def main():
     
     # Load hình ảnh và âm thanh
     try:
-        play_music('music/menu_music.mp3', 0.5)
+        play_music('music/maintheme.mp3', 0.5)
     except:
         print("Không tìm thấy file nhạc menu")
 
@@ -637,7 +637,7 @@ def main():
                         in_menu = False
                         stop_music()
                         try:
-                            play_music('music/game_music.mp3', 0.5)
+                            play_music('music/Party in Paradise.ogg', 0.5)
                         except:
                             print("Không tìm thấy file nhạc game")
                     elif button_clicked == 1:  # Instructions
