@@ -60,10 +60,27 @@ class Player:
         'Spike Factory',
         'Road Spikes',
         'Exploding Pineapple',]
-    # ban đầu 
     def __init__(self):
-        self.health = 10 # health start
-        self.money = 30000000 # money start
+        self.health = 10
+        self.money = 30000000
+        self.score = 0
+        self.level = 1
+        self.exp = 0
+        self.exp_to_next_level = 1000
+        self.tower_upgrades = {}  # Lưu trữ trạng thái nâng cấp của tháp
+
+    def add_exp(self, amount):
+        self.exp += amount
+        if self.exp >= self.exp_to_next_level:
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.exp -= self.exp_to_next_level
+        self.exp_to_next_level = int(self.exp_to_next_level * 1.5)
+        self.health += 1
+        self.money += 1000
+        print(f"Level Up! Bạn đã đạt level {self.level}!")
 
 player = Player()
 
@@ -126,12 +143,15 @@ mapvar = Map()
 
 
 class Enemy:
-    layers = [ # Name Health Speed CashReward
-        ('red',      1, 1.0, 0),
-        # ('Name'   Health, Speed, CashReward),
-        ('darkblue', 1, 1.0, 0),
-        ('green',    1, 1.2, 0),
-        ('yellow',   1, 2.0, 0),]
+    layers = [ # Name Health Speed CashReward ExpReward
+        ('red',      1, 1.0, 0, 10),
+        ('darkblue', 1, 1.0, 0, 15),
+        ('green',    1, 1.2, 0, 20),
+        ('yellow',   1, 2.0, 0, 25),
+        ('purple',   2, 1.5, 0, 30),
+        ('brown',    2, 1.8, 0, 35),
+        ('magenta',  3, 1.3, 0, 40),
+        ('aqua',     3, 1.6, 0, 45),]
 
     # initalize enemy
     def __init__(self,layer):
@@ -149,7 +169,7 @@ class Enemy:
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
     def setLayer(self): 
-        self.name,self.health,self.speed,self.cashprize = self.layers[self.layer]
+        self.name,self.health,self.speed,self.cashprize,self.exp_reward = self.layers[self.layer]
         self.image = EnemyImageArray[self.name]
 
     def nextLayer(self): 
@@ -159,6 +179,7 @@ class Enemy:
         self.shape_type= new
         self.layer-=1; self.setLayer()
         if self.layer== -1: self.kill()
+        player.add_exp(self.exp_reward)
 
     def next_target(self):
         # check if bloons reached the ending
@@ -188,6 +209,12 @@ class Enemy:
             enemyList.remove(self)
         # Add optional effects or sounds for smoother feedback
         print(f"Enemy {self.name} popped!")
+        player.score += 100
+        player.add_exp(self.exp_reward)
+        try:
+            play_sound('sounds/pop.mp3', 0.3)
+        except:
+            print("Không tìm thấy file âm thanh")
 
     def move(self,frametime):
         speed = frametime*fps*self.speed
@@ -253,7 +280,22 @@ class Tower:
     def __init__(self,pos):
         self.targetTimer = 0
         self.rect = self.image.get_rect(center=pos)
+        self.level = 1
+        self.max_level = 3
         towerList.append(self)
+
+    def upgrade(self):
+        if self.level < self.max_level:
+            self.level += 1
+            self.damage *= 1.5
+            self.range *= 1.2
+            self.firerate *= 1.2
+            self.cost = int(self.cost * 1.5)
+            print(f"Tháp đã được nâng cấp lên level {self.level}!")
+            try:
+                play_sound('sounds/upgrade.mp3', 0.3)
+            except:
+                print("Không tìm thấy file âm thanh")
 
     def takeTurn(self,frametime,screen):
         self.startTargetTimer = self.firerate
@@ -263,6 +305,10 @@ class Tower:
             if enemypoint:
                 pygame.draw.line(screen,(255,255,255),self.rect.center,enemypoint)
                 self.targetTimer=self.startTargetTimer
+                try:
+                    play_sound('sounds/shoot.mp3', 0.2)
+                except:
+                    print("Không tìm thấy file âm thanh")
     def target(self):
         # for each enemy loop
         for enemy in sorted(enemyList,key=lambda i: i.distance,reverse=True):
@@ -318,15 +364,16 @@ class Icon:
 
 
 def dispText(screen,wavenum):
-    #font = pygame.font.Font('C:/Windows/Fonts/ARCHRISTY.ttf',18)
     font = pygame.font.SysFont('arial', 18)
-    # Feel free to change the font here
     h = font.get_height()+2
-    strings = [('Round: %d/%d' % (wavenum,len(mapvar.waves)),(200,20)),
-               (str(player.money),(730,15)),
-               # adjust player values here
-               (str(max(player.health,0)),(730,45))]
-               # set player health
+    strings = [
+        ('Round: %d/%d' % (wavenum,len(mapvar.waves)),(200,20)),
+        (str(player.money),(730,15)),
+        (str(max(player.health,0)),(730,45)),
+        ('Score: %d' % player.score,(200,45)),
+        ('Level: %d' % player.level,(200,70)),
+        ('EXP: %d/%d' % (player.exp, player.exp_to_next_level),(200,95))
+    ]
     for string,pos in strings:
         text = font.render(string,2,(0,0,0))
         screen.blit(text,text.get_rect(midleft=pos))
@@ -499,6 +546,36 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                     # enemy.kill()
                     enemy.nextLayer()
                     enemy.draw_health_bar(screen)
+                elif enemy.shape_type == 4 and drawn_shape == "v_shape":
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
+
+    img = pygame.surfarray.array3d(surface_temp)
+    img = numpy.transpose(img, (1, 0, 2))
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    if len(contours) > 0:
+        contour = max(contours, key=cv2.contourArea)
+        contour_rect = cv2.boundingRect(contour)
+
+        for enemy in enemyList[:]:
+            # if enemy.rect.colliderect(contour_rect):
+                if enemy.shape_type == 0 and drawn_shape == "horizontal":
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
+                elif enemy.shape_type == 1 and drawn_shape == "vertical":
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
+                elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 3 and drawn_shape == "v_shape":
                     # enemy.kill()
                     enemy.nextLayer()
@@ -509,16 +586,15 @@ class Menu:
         self.font_big = pygame.font.Font(None, 74)
         self.font_small = pygame.font.Font(None, 36)
         self.buttons = [
-            {'text': 'CHOI GAME', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'HUONG DAN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'CAI DAT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'THOAT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
+            {'text': 'CHƠI GAME', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'HƯỚNG DẪN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'THOÁT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
         ]
         self.game_title = self.font_big.render('TOWER DEFENSE', True, (255, 215, 0))
         self.title_rect = self.game_title.get_rect(center=(screenWidth // 2, 100))
         self.button_spacing = 80
         self.initialize_buttons()
-        
+
     def initialize_buttons(self):
         for i, button in enumerate(self.buttons):
             text_surface = self.font_small.render(button['text'], True, button['color'])
@@ -526,13 +602,8 @@ class Menu:
             button['rect'] = text_rect
 
     def draw(self, screen, mouse_pos):
-        # Vẽ background
         screen.fill((0, 0, 0))
-        
-        # Vẽ tiêu đề game
         screen.blit(self.game_title, self.title_rect)
-        
-        # Vẽ các nút
         for button in self.buttons:
             color = button['hover_color'] if button['rect'].collidepoint(mouse_pos) else button['color']
             text_surface = self.font_small.render(button['text'], True, color)
@@ -548,14 +619,15 @@ def show_instructions(screen):
     running = True
     font = pygame.font.Font(None, 36)
     instructions = [
-        "HUONG DAN CHOI:",
-        "- Dat cac thap de bao ve duong di",
-        "- Tieu diet ke dich de nhan tien",
-        "- Bao ve can cu khong de ke dich di qua",
+        "HƯỚNG DẪN CHƠI:",
+        "- Đặt các tháp để bảo vệ đường đi",
+        "- Tiêu diệt kẻ địch để nhận tiền",
+        "- Bảo vệ căn cứ không để kẻ địch đi qua",
+        "- Nhấn SPACE để bắt đầu wave quái",
+        "- Vẽ hình tương ứng với ký hiệu trên quái để tiêu diệt",
         "",
-        "Nhan ESC de quay lai"
+        "Nhấn ESC để quay lại"
     ]
-
     
     while running:
         for event in pygame.event.get():
@@ -572,200 +644,108 @@ def show_instructions(screen):
             screen.blit(text, (screenWidth // 4, 150 + i * 50))
         pygame.display.flip()
 
-def show_settings(screen):
-    running = True
-    font = pygame.font.Font(None, 36)
-    volume = 0.65
-    difficulty = "Bình thường"
-    
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-                    
-        screen.fill((0, 0, 0))
-        
-        # Hiển thị các tùy chọn cài đặt
-        title = font.render("CAI DAT", True, (255, 255, 255))
-        volume_text = font.render(f"AM LUONG: {int(volume * 100)}%", True, (255, 255, 255))
-        difficulty_text = font.render(f"DO KHO: {difficulty}", True, (255, 255, 255))
-        back_text = font.render("NHAN ESC DE QUAY LAI", True, (255, 255, 255))
-        
-        screen.blit(title, (screenWidth // 2 - 50, 150))
-        screen.blit(volume_text, (screenWidth // 4, 250))
-        screen.blit(difficulty_text, (screenWidth // 4, 300))
-        screen.blit(back_text, (screenWidth // 4, 400))
-        
-        pygame.display.flip()
-
-
+def play_sound(file, volume=0.5):
+    sound = pygame.mixer.Sound(file)
+    sound.set_volume(volume)
+    sound.play()
+ 
+#hhw
 # main file
 def main():
     pygame.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
-    pygame.display.set_caption('Tower Defense Game')
+    pygame.display.set_caption('Bloons Tower Defence')
     screen = pygame.display.set_mode((screenWidth,screenHeight))
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
 
-    # Khởi tạo menu
-    menu = Menu()
-    in_menu = True
+    mapvar.getmovelist()
     
-    # Load hình ảnh và âm thanh
-    try:
-        play_music('music/maintheme.mp3', 0.5)
-    except:
-        print("Không tìm thấy file nhạc menu")
 
+    drawing= False
+    pos=[]
+
+    background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
+    heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
+    w,h = plank.get_size()
+    for y in range(screenHeight//h): background.blit(plank,(screenWidth-w,y*h))
+    for y in range(3):
+        for x in range(screenWidth//w): background.blit(plank,(x*w,screenHeight-(y+1)*h))
+    background.blit(money,(screenWidth-w+6,h//2-money.get_height()//2))
+    background.blit(heart,(screenWidth-w+6,h+h//2-heart.get_height()//2))
+    
+    level_img,t1,t2 = mapvar.get_background()
+    loadImages()
+    # for tower in player.towers: Icon(tower)
+    selected = None
+    speed = 3
+    wave = 1
+    play_music('music/maintheme.mp3')
     while True:
-        mouse_pos = pygame.mouse.get_pos()
-        
-        # Xử lý menu chính
-        if in_menu:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    button_clicked = menu.handle_click(mouse_pos)
-                    if button_clicked == 0:  # Play Game
-                        in_menu = False
-                        stop_music()
-                        try:
-                            play_music('music/Party in Paradise.ogg', 0.5)
-                        except:
-                            print("Không tìm thấy file nhạc game")
-                    elif button_clicked == 1:  # Instructions
-                        show_instructions(screen)
-                    elif button_clicked == 2:  # Settings
-                        show_settings(screen)
-                    elif button_clicked == 3:  # Quit
-                        pygame.quit()
-                        sys.exit()
-            
-            menu.draw(screen, mouse_pos)
-            pygame.display.flip()
-            clock.tick(fps)
-            continue
+        starttime = time.time()
+        clock.tick(fps)
+        frametime = (time.time()-starttime)*speed
+        screen.blit(level_img,(0,0))
+        mpos = pygame.mouse.get_pos()
 
-        # Game logic starts here
-        mapvar.getmovelist()
-        drawing = False
-        pos = []
+        if senderList: wave = senderList[0].update(frametime,wave)
 
-        background = pygame.Surface((800,600))
-        background.set_colorkey((0,0,0))
-        heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
-        w,h = plank.get_size()
-        for y in range(screenHeight//h): 
-            background.blit(plank,(screenWidth-w,y*h))
-        for y in range(3):
-            for x in range(screenWidth//w): 
-                background.blit(plank,(x*w,screenHeight-(y+1)*h))
-        background.blit(money,(screenWidth-w+6,h//2-money.get_height()//2))
-        background.blit(heart,(screenWidth-w+6,h+h//2-heart.get_height()//2))
-        
-        level_img,t1,t2 = mapvar.get_background()
-        loadImages()
-        selected = None
-        speed = 3
-        wave = 1
+        z0,z1 = [],[]
+        for enemy in enemyList:
+            d = enemy.distance
+            if d<580: z1+=[enemy]
+            elif d<950: z0+=[enemy]
+            elif d<2392: z1+=[enemy]
+            elif d<2580: z0+=[enemy]
+            else: z0+=[enemy]
 
-        while True:
-            starttime = time.time()
-            clock.tick(fps)
-            frametime = (time.time()-starttime)*speed
-            screen.blit(level_img,(0,0))
-            mpos = pygame.mouse.get_pos()
+        for enemy in z0:
+         enemy.move(frametime)
+         screen.blit(enemy.image,enemy.rect)
+         enemy.draw_health_bar(screen)
+         screen.blit(t1,(0,0))
+         screen.blit(t2,(0,0))
+        for enemy in z1: enemy.move(frametime); screen.blit(enemy.image,enemy.rect); enemy.draw_health_bar(screen)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        in_menu = True
-                        enemyList.clear()
-                        towerList.clear()
-                        bulletList.clear()
-                        senderList.clear()
-                        stop_music()
-                        try:
-                            play_music('music/menu_music.mp3', 0.5)
-                        except:
-                            print("Không tìm thấy file nhạc menu")
-                        return
+        for tower in towerList: tower.takeTurn(frametime,screen); drawTower(screen,tower,selected)
 
-            if senderList: 
-                wave = senderList[0].update(frametime,wave)
 
-            z0,z1 = [],[]
-            for enemy in enemyList:
-                d = enemy.distance
-                if d<580: z1+=[enemy]
-                elif d<950: z0+=[enemy]
-                elif d<2392: z1+=[enemy]
-                elif d<2580: z0+=[enemy]
-                else: z0+=[enemy]
+        screen.blit(background,(0,0))
 
-            for enemy in z0:
-                enemy.move(frametime)
-                screen.blit(enemy.image,enemy.rect)
-                enemy.draw_health_bar(screen)
-                screen.blit(t1,(0,0))
-                screen.blit(t2,(0,0))
-            for enemy in z1: 
-                enemy.move(frametime)
-                screen.blit(enemy.image,enemy.rect)
-                enemy.draw_health_bar(screen)
-
-            for tower in towerList: 
-                tower.takeTurn(frametime,screen)
-                drawTower(screen,tower,selected)
-
-            screen.blit(background,(0,0))
-
-            for icon in iconList: 
-                drawIcon(screen,icon,mpos,font)
-            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
-            surface_temp = pygame.Surface((800,600)).convert_alpha()
-            surface_temp.fill((0,0,0,0))
-            if (len(pos)>1):
-                pygame.draw.aalines(surface_temp, (255, 255, 255), False, pos, 8)
-                if drawing:
-                    guide_surface = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
-                    pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
-                    screen.blit(guide_surface, (0, 0))
-            dispText(screen,wave)
-            if len(pos) > 10:
-                shape_detected = detect(surface_temp)
-                if shape_detected:
-                    check_collision_with_enemies(shape_detected, surface_temp, screen)
-                    if shape_detected == "horizontal":
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "vertical":
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "diagonal_right":
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "v_shape":
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-            screen.blit(surface_temp,(0,0))
-            pygame.display.flip()
+        for icon in iconList: drawIcon(screen,icon,mpos,font)
+        selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
+        surface_temp= pygame.Surface((800,600)).convert_alpha()
+        surface_temp.fill((0,0,0,0))
+        if (len(pos)>1):
+            pygame.draw.aalines(surface_temp, (255, 255, 255), False, pos, 8)
+            if drawing:
+                guide_surface = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
+                pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
+                screen.blit(guide_surface, (0, 0))
+        dispText(screen,wave)
+        if len(pos) > 10:
+            shape_detected = detect(surface_temp)
+            if shape_detected:
+                check_collision_with_enemies(shape_detected, surface_temp, screen)
+                if shape_detected == "horizontal":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                elif shape_detected == "vertical":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                elif shape_detected == "diagonal_right":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                elif shape_detected == "v_shape":
+                    font = pygame.font.SysFont('arial', 22)
+                    text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
+                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+        screen.blit(surface_temp,(0,0))
+        pygame.display.flip()
 
 if __name__ == '__main__':
-    while True:
-        main()
+    main()
 #'20*1','30*1',
