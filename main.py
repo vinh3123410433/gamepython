@@ -168,7 +168,6 @@ class Enemy:
         self.shape_type = random.randint(0, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         self.event= random.randint(0, 5)
-        self.start= pygame.time.get_ticks() # lưu biến đếm tgian nếu event kích hoạt
         self.start= 0
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
@@ -181,6 +180,7 @@ class Enemy:
         valid_numbers = [n for n in range(0, 3) if n !=old]
         new = random.choice(valid_numbers)
         self.shape_type= new
+        self.event= random.randint(0, 5)
         self.layer-=1; 
         if self.layer== -1: 
             self.kill()
