@@ -10,7 +10,7 @@ screenHeight = 600
 #
 squareSize = 50
 # Original upscaled (Frames per second)
-fps = 30
+fps = 120
 
 enemyList = []
 towerList = []
@@ -250,41 +250,63 @@ class Enemy:
         pygame.draw.rect(screen, (0, 255, 0), (self.rect.left, self.rect.top - bar_height, bar_width * current_health_ratio, bar_height))
 
         # Vẽ ký hiệu gạch
-        line_length = 13  # Độ dài của gạch
+        line_length = 16  # Tăng độ dài của gạch từ 13 lên 16
         line_y = self.rect.top - bar_height - 10  # Vị trí y của gạch
         
         if self.shape_type == 0:
-            # Vẽ gạch ngang
+            # Vẽ viền đen cho gạch ngang
+            pygame.draw.line(screen, (0, 0, 0), 
+                           (self.rect.centerx - line_length//2, line_y),
+                           (self.rect.centerx + line_length//2, line_y), 5)
+            # Vẽ gạch ngang có màu 
             pygame.draw.line(screen, self.shape_color, 
                            (self.rect.centerx - line_length//2, line_y),
-                           (self.rect.centerx + line_length//2, line_y), 2)
+                           (self.rect.centerx + line_length//2, line_y), 3)
         elif self.shape_type == 1:
-            # Vẽ gạch dọc
+            # Vẽ viền đen cho gạch dọc
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 4)
+            # Vẽ gạch dọc có màu
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 2)
         elif self.shape_type == 2:
-            # Vẽ gạch chéo xuống
+            # Vẽ viền đen cho gạch chéo xuống
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx - line_length//2, line_y - line_length//2),
+                           (self.rect.centerx + line_length//2, line_y + line_length//2), 5)
+            # Vẽ gạch chéo xuống có màu
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
-                           (self.rect.centerx + line_length//2, line_y + line_length//2), 2)
+                           (self.rect.centerx + line_length//2, line_y + line_length//2), 3)
         #elif self.shape_type == 3:
             # Vẽ gạch chéo lên
             #pygame.draw.line(screen, self.shape_color,
                            #(self.rect.centerx - line_length//2, line_y + line_length//2),
                            #(self.rect.centerx + line_length//2, line_y - line_length//2), 2)
         elif self.shape_type == 3:
-            # Vẽ chữ V
+            # Vẽ viền đen cho chữ V
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx - line_length//2, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 5)
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx + line_length//2, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 5)
+            # Vẽ chữ V có màu
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
-                           (self.rect.centerx, line_y + line_length//2), 2)
+                           (self.rect.centerx, line_y + line_length//2), 3)
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx + line_length//2, line_y - line_length//2),
-                           (self.rect.centerx, line_y + line_length//2), 2)
+                           (self.rect.centerx, line_y + line_length//2), 3)
         elif self.shape_type == 4:
-            # Vẽ hình tròn
+            # Vẽ viền đen cho hình tròn
+            pygame.draw.circle(screen, (0, 0, 0),
+                             (self.rect.centerx, line_y), line_length//1.5, 5)
+            # Vẽ hình tròn có màu
             pygame.draw.circle(screen, self.shape_color,
-                             (self.rect.centerx, line_y), line_length//2, 2)
+                             (self.rect.centerx, line_y), line_length//1.5, 3)
 
 class Tower:
     def __init__(self,pos):
