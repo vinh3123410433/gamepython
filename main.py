@@ -164,7 +164,7 @@ class Enemy:
         self.rect = self.image.get_rect(center=self.pos)
         self.distance = 0
         # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
-        self.shape_type = random.randint(0, 3)
+        self.shape_type = random.randint(0, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
@@ -215,7 +215,7 @@ class Enemy:
         player.score += 100
         player.add_exp(self.exp_reward)
         try:
-            play_sound('sounds/pop.mp3', 0.3)
+            play_sound('sounds/pop3.mp3', 0.3)
         except:
             print("Không tìm thấy file âm thanh")
 
@@ -278,6 +278,10 @@ class Enemy:
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx + line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 2)
+        elif self.shape_type == 4:
+            # Vẽ hình tròn
+            pygame.draw.circle(screen, self.shape_color,
+                             (self.rect.centerx, line_y), line_length//2, 2)
 
 class Tower:
     def __init__(self,pos):
@@ -296,7 +300,7 @@ class Tower:
             self.cost = int(self.cost * 1.5)
             print(f"Tháp đã được nâng cấp lên level {self.level}!")
             try:
-                play_sound('sounds/upgrade.mp3', 0.3)
+                play_sound('sounds/new upgrade.mp3', 0.3)
             except:
                 print("Không tìm thấy file âm thanh")
 
