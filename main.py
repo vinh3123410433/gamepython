@@ -177,9 +177,12 @@ class Enemy:
         valid_numbers = [n for n in range(0, 3) if n !=old]
         new = random.choice(valid_numbers)
         self.shape_type= new
-        self.layer-=1; self.setLayer()
-        if self.layer== -1: self.kill()
-        player.add_exp(self.exp_reward)
+        self.layer-=1; 
+        if self.layer== -1: 
+            self.kill()
+        else :
+            self.setLayer()
+            player.add_exp(self.exp_reward)
 
     def next_target(self):
         # check if bloons reached the ending
@@ -537,49 +540,20 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
                     # enemy.kill()
                     enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
+                    if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
                     # enemy.kill()
                     enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
+                    if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
                     # enemy.kill()
                     enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 4 and drawn_shape == "v_shape":
-                    # enemy.kill()
-                    enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
-
-    img = pygame.surfarray.array3d(surface_temp)
-    img = numpy.transpose(img, (1, 0, 2))
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if len(contours) > 0:
-        contour = max(contours, key=cv2.contourArea)
-        contour_rect = cv2.boundingRect(contour)
-
-        for enemy in enemyList[:]:
-            # if enemy.rect.colliderect(contour_rect):
-                if enemy.shape_type == 0 and drawn_shape == "horizontal":
-                    # enemy.kill()
-                    enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 1 and drawn_shape == "vertical":
-                    # enemy.kill()
-                    enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
-                    # enemy.kill()
-                    enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
+                    if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 3 and drawn_shape == "v_shape":
                     # enemy.kill()
                     enemy.nextLayer()
-                    enemy.draw_health_bar(screen)
+                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+
 
 class Menu:
     def __init__(self):
