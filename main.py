@@ -200,6 +200,9 @@ class Enemy:
         # end game / player if so (no health)
         else: self.kill(); player.health -= (self.layer+1) #index layer hiện tại +1
 
+    def speedup(self):
+        self.speed += 1
+
     def hit(self,damage):
         player.money+=1
         self.health -= damage
@@ -219,7 +222,7 @@ class Enemy:
         except:
             print("Không tìm thấy file âm thanh")
 
-    def move(self,frametime):
+    def move(self,frametime, ):
         speed = frametime*fps*self.speed
 
         a,b = self.pos,self.targets[self.target] #list, tuple
@@ -549,26 +552,43 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
 
         for enemy in enemyList[:]:
             # if enemy.rect.colliderect(contour_rect):
+                rdm = random.randint(1, 2)
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
                     # enemy.kill()
-                    enemy.nextLayer()
-                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+                    if rdm==1:
+                        enemy.speedup()
+                    else:
+                        enemy.nextLayer()
+                        if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
                     # enemy.kill()
-                    enemy.nextLayer()
-                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+                    if rdm==1:
+                        enemy.speedup()
+                    else:
+                        enemy.nextLayer()
+                        if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
                     # enemy.kill()
-                    enemy.nextLayer()
-                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+                    if rdm==1:
+                        enemy.speedup()
+                    else:
+                        enemy.nextLayer()
+                        if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 3 and drawn_shape == "v_shape":
                     # enemy.kill()
-                    enemy.nextLayer()
-                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+                    if rdm==1:
+                        enemy.speedup()
+                    else:
+                        enemy.nextLayer()
+                        if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 4 and drawn_shape == "circle":
                     # enemy.kill()
-                    enemy.nextLayer()
-                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+                    rdm = random.randint(1, 3)
+                    if rdm==1:
+                        enemy.speedup()
+                    else:
+                        enemy.nextLayer()
+                        if enemy.layer> -1: enemy.draw_health_bar(screen)
 
 
 
