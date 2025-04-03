@@ -10,13 +10,14 @@ screenHeight = 600
 #
 squareSize = 50
 # Original upscaled (Frames per second)
-fps = 120
+fps = 45
 
 enemyList = []
 towerList = []
 bulletList = []
 iconList = []
 senderList = []
+startList= []
 # initalize empty arrays of items on new map
 
 colors = { # R,G,B
@@ -166,6 +167,9 @@ class Enemy:
         # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
         self.shape_type = random.randint(0, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        self.event= random.randint(0, 5)
+        self.start= pygame.time.get_ticks() # lưu biến đếm tgian nếu event kích hoạt
+        self.start= 0
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
     def setLayer(self): 
@@ -555,10 +559,40 @@ def detect(surface_temp):
                     if contour_area / hull_area < 0.75 and w > h * 0.8 and h > w * 0.8:
                         return "v_shape"
             if len(approx) > 8 and (contour_area / circle_area) > 0.5 and (4 * math.pi * contour_area) / (cv2.arcLength(contour, True) ** 2) > 0.5:
-                print("contour_area", contour_area, "circle_area", circle_area)
                 return "circle"
     
     return None
+
+def event_enemy(screen):
+    for enemy in enemyList[:]:
+        if enemy.event == 1 and enemy.pos[0] > 0:
+            if enemy.start == 0:  # Chỉ gán start nếu chưa có giá trị
+                enemy.start = pygame.time.get_ticks()
+
+            current= pygame.time.get_ticks()
+            countdown= (current- enemy.start) // 1000
+            num= max(0, 5- countdown)
+            font= pygame.font.SysFont("Arial", 20, bold=True)
+            text= font.render(str(num), 2, (0, 0, 0))
+            text_rect = text.get_rect(center=enemy.rect.center)
+            screen.blit(text, text_rect)
+
+            if num==0: 
+                startList. append(pygame.time.get_ticks())
+                enemy.kill()
+            print(startList)
+
+def draw_cloud():
+        if len(startList) > 0:
+            e= startList[0]
+            current = pygame.time.get_ticks()
+            countdown = max (0, (current - startList[0]) // 1000)  
+            if len(startList) > 1 and startList[1] - e < 2300: startList[1]= e
+            if countdown < 3: 
+                return True
+            else: 
+                startList.remove(e)
+                return False
 
 def check_collision_with_enemies(drawn_shape, surface_temp, screen):
     img = pygame.surfarray.array3d(surface_temp)
@@ -611,7 +645,6 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
-
 
 
 class Menu:
@@ -693,7 +726,6 @@ def main():
     font = pygame.font.Font(None,20)
 
     mapvar.getmovelist()
-    
 
     drawing= False
     pos=[]
@@ -777,6 +809,12 @@ def main():
                     text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
                     surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
         screen.blit(surface_temp,(0,0))
+        event_enemy(screen)
+        cloud_image = pygame.image.load("images/cloud.png")
+        cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
+        if draw_cloud()== True:
+            screen.blit(cloud_image, (0, 0))
+            
         pygame.display.flip()
 
 if __name__ == '__main__':
