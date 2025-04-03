@@ -502,6 +502,11 @@ def detect(surface_temp):
         
         if len(contour) >= 2:
             [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
+            approx = cv2.approxPolyDP(contour, 0.002 * cv2.arcLength(contour, True), True)
+            (a, b), radius = cv2.minEnclosingCircle(contour)
+            circle_area = math.pi * (radius ** 2)
+            contour_area = cv2.contourArea(contour)
+            circularity = (4 * math.pi * contour_area) / (contour_area ** 2)
             angle = math.degrees(math.atan2(vy, vx))
             
             if (-20 <= angle <= 20) or (160 <= angle <= 200):
@@ -524,6 +529,9 @@ def detect(surface_temp):
                     # Refine the v_shape detection to avoid conflicts with diagonal_left
                     if contour_area / hull_area < 0.75 and w > h * 0.8 and h > w * 0.8:
                         return "v_shape"
+            if len(approx) > 8 and (contour_area / circle_area) > 0.5 and (4 * math.pi * contour_area) / (cv2.arcLength(contour, True) ** 2) > 0.5:
+                print("contour_area", contour_area, "circle_area", circle_area)
+                return "circle"
     
     return None
 
@@ -557,6 +565,11 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                     # enemy.kill()
                     enemy.nextLayer()
                     if enemy.layer> -1: enemy.draw_health_bar(screen)
+                elif enemy.shape_type == 4 and drawn_shape == "circle":
+                    # enemy.kill()
+                    enemy.nextLayer()
+                    if enemy.layer> -1: enemy.draw_health_bar(screen)
+
 
 
 class Menu:
