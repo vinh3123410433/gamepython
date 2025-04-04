@@ -18,6 +18,7 @@ bulletList = []
 iconList = []
 senderList = []
 startList= []
+hailList = []
 # initalize empty arrays of items on new map
 
 colors = { # R,G,B
@@ -167,7 +168,7 @@ class Enemy:
         # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
         self.shape_type = random.randint(0, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        self.event= random.randint(0, 5)
+        self.event= 2
         self.start= 0
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
@@ -507,7 +508,14 @@ def workEvents(selected, wave, speed, pos, drawing):
             if event.key == pygame.K_k and selected in towerList: player.money+=int(selected.cost*0.9); towerList.remove(selected); selected = None
             if event.key == pygame.K_w and speed<10: speed+=1
             if event.key == pygame.K_s and speed>1: speed-=1
-        
+            
+               
+        keys = pygame.key.get_pressed()  # Lấy trạng thái phím
+
+        if keys[pygame.K_a]:
+            mpos = pygame.mouse.get_pos()
+            hailList.append(Hail(mpos[0], mpos[1]))
+
     return selected,wave,speed, pos, drawing
 
 def detect(surface_temp):
@@ -646,6 +654,85 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
 
+class Hail:
+    def __init__(self, x, y):
+        self.x, self.y = random.choice([(0, random.randint(-10, screenHeight/10)), (random.randint(-10, screenWidth), 0)])
+        self.target= (x, y)
+        self.speed = 10
+        self.image = pygame.image.load("images/meteor1.png").convert_alpha()
+        self.rect= self.image.get_rect(center=(self.x, self.y))
+        self.angle = None
+        self.first= (x)
+
+
+    def draw(self, screen):
+        img= random.randint(1, 3)
+        if img==1:
+            self.image = pygame.image.load("images/meteor1.png").convert_alpha()
+        elif img==2:
+            self.image = pygame.image.load("images/meteor2.png").convert_alpha()
+        elif img==3:
+            self.image = pygame.image.load("images/meteor3.png").convert_alpha()
+        self.image = pygame.transform.rotate(self.image, math.degrees(self.angle))
+        self.image = pygame.transform.scale(self.image, (100, 100))
+        if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
+            self.image = pygame.transform.flip(self.image, True, False)
+        screen.blit(self.image, (self.x, self.y))
+        print("angle", self.angle/math.pi*180)
+
+    def move(self, screen):
+        dx = self.target[0] - self.x
+        dy = self.target[1] - self.y
+
+        self.angle= -math.atan2(dy, dx)
+        print("angle chuột", self.angle/math.pi*180)
+        print("angle enemy", math.atan2(self.y,self.x)/math.pi*180)
+        print(self.target)
+        x_target = math.cos(self.angle) * self.speed
+        y_target = -math.sin(self.angle) * self.speed
+        next_pos = (self.x + x_target, self.y + y_target)
+        distance= math.sqrt(dx**2 + dy**2)
+        if distance < self.speed:
+            self.x, self.y = self.target
+            hailList.remove(self)
+        else:
+            self.x += x_target
+            self.y += y_target
+
+        self.rect = (self.x, self.y)
+
+    # def hit_target(self):
+    #     print("hail", self.x, self.y)
+    #     print("enemy", self.target.rect.centerx, self.target.rect.centery)
+    #     if self.rect.colliderect(self.target.rect):
+    #         print ("Hail hit the target!")
+    #         return True
+    #     return False
+    
+
+    # def move(self): 
+    #     if self.target:
+    #         enemy_vx = self.target.vx
+    #         enemy_vy = self.target.vy
+    #         dx = self.target.targets[self.target.target][0] - self.x
+    #         dy = self.target.targets[self.target.target][1] - self.y
+    #         distance = math.sqrt(dx ** 2 + dy ** 2)
+
+    #         t = distance / self.speed
+
+    #         future_x = self.target.rect.centerx + enemy_vx * t
+    #         future_y = self.target.rect.centery + enemy_vy * t
+
+    #         dx_future = future_x - self.x
+    #         dy_future = future_y - self.y
+    #         distance_future = math.sqrt(dx_future ** 2 + dy_future ** 2)
+
+    #         if distance_future > 0:
+    #             self.x += dx_future / distance_future * self.speed
+    #             self.y += dy_future / distance_future * self.speed
+
+    #         self.rect.center = (self.x, self.y)
+
 
 class Menu:
     def __init__(self):
@@ -729,6 +816,7 @@ def main():
 
     drawing= False
     pos=[]
+    meteor= 1
 
     background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
     heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
@@ -817,6 +905,18 @@ def main():
             for enemy in enemyList[:]:
                 enemy.move(frametime)
             pygame.display.flip()
+
+
+        for hail in hailList[:]:
+            
+            hail.move(screen)
+            hail.draw(screen)
+            
+            for enemy in enemyList[:]:
+                if hail.rect.colliderect(enemy.rect):
+                    enemy.kill()
+                    hailList.remove(hail)
+                    break
             
         pygame.display.flip()
 
