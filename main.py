@@ -10,7 +10,7 @@ screenHeight = 600
 #
 squareSize = 50
 # Original upscaled (Frames per second)
-fps = 45
+fps = 30
 
 enemyList = []
 towerList = []
@@ -814,6 +814,9 @@ def main():
         cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
         if draw_cloud()== True:
             screen.blit(cloud_image, (0, 0))
+            for enemy in enemyList[:]:
+                enemy.move(frametime)
+            pygame.display.flip()
             
         pygame.display.flip()
 
