@@ -19,6 +19,7 @@ iconList = []
 senderList = []
 startList= []
 hailList = []
+explosionList = []
 # initalize empty arrays of items on new map
 
 colors = { # R,G,B
@@ -168,7 +169,7 @@ class Enemy:
         # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
         self.shape_type = random.randint(0, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        self.event= 2
+        self.event= random.randint(0, 10)
         self.start= 0
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
@@ -605,6 +606,38 @@ def draw_cloud():
             else: 
                 startList.remove(e)
                 return False
+            
+class Explosion:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.start_time = pygame.time.get_ticks()
+        self.img= None
+        self.duration = 300  
+
+    def draw(self, screen):
+        boom1 = pygame.image.load("images/boom1.png").convert_alpha()
+        boom1= pygame.transform.scale(boom1, (100, 100))
+        boom2 = pygame.image.load("images/boom2.png").convert_alpha()
+        boom2= pygame.transform.scale(boom2, (100, 100))
+        boom3 = pygame.image.load("images/boom3.png").convert_alpha()
+        boom3= pygame.transform.scale(boom3, (100, 100))
+        current_time = pygame.time.get_ticks() - self.start_time
+        if current_time < 100:
+            self.img = boom1
+            self.rect= self.img.get_rect(center=(self.x, self.y))
+            screen.blit(self.img, self.rect)
+        elif current_time < 200:
+            self.img = boom2
+            self.rect= self.img.get_rect(center=(self.x, self.y))
+            screen.blit(self.img, self.rect)
+        elif current_time < 300:
+            self.img = boom3
+            self.rect= self.img.get_rect(center=(self.x, self.y))
+            screen.blit(self.img, self.rect)
+
+    def is_done(self):
+        return pygame.time.get_ticks() - self.start_time > self.duration
 
 def check_collision_with_enemies(drawn_shape, surface_temp, screen):
     img = pygame.surfarray.array3d(surface_temp)
@@ -681,7 +714,7 @@ class Hail:
         if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
             self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect(center=self.rect.center) 
-        screen.blit(self.image, (self.x, self.y))
+        screen.blit(self.image, self.rect)
         print("angle", self.angle/math.pi*180)
 
     def move(self, screen):
@@ -928,7 +961,7 @@ def main():
                         surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
             screen.blit(surface_temp,(0,0))
             event_enemy(screen)
-            cloud_image = pygame.image.load("images/cloud.png")
+            cloud_image = pygame.image.load("images/mud.png")
             cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
             if draw_cloud()== True:
                 screen.blit(cloud_image, (0, 0))
@@ -945,7 +978,14 @@ def main():
                 for enemy in enemyList[:]:
                     if hail.rect.colliderect(enemy.rect):
                         enemy.kill()
-                        if (hail in hailList): hailList.remove(hail)
+                        if (hail in hailList): 
+                            start_time= pygame.time.get_ticks()
+                            hailList.remove(hail)
+                            explosionList.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
+            for explosion in explosionList[:]:
+                explosion.draw(screen)
+                if explosion.is_done():
+                    explosionList.remove(explosion)
                         
                 
             pygame.display.flip()
