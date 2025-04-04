@@ -578,7 +578,7 @@ def event_enemy(screen):
             screen.blit(text, text_rect)
 
             if num==0: 
-                startList. append(pygame.time.get_ticks())
+                startList.append(pygame.time.get_ticks())
                 enemy.kill()
             print(startList)
 
@@ -725,97 +725,127 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
 
-    mapvar.getmovelist()
+    # Khởi tạo menu
+    menu = Menu()
+    game_state = "menu"  # Có thể là "menu", "game", "instructions"
 
-    drawing= False
-    pos=[]
-
-    background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
-    heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
-    w,h = plank.get_size()
-    for y in range(screenHeight//h): background.blit(plank,(screenWidth-w,y*h))
-    for y in range(3):
-        for x in range(screenWidth//w): background.blit(plank,(x*w,screenHeight-(y+1)*h))
-    background.blit(money,(screenWidth-w+6,h//2-money.get_height()//2))
-    background.blit(heart,(screenWidth-w+6,h+h//2-heart.get_height()//2))
-    
-    level_img,t1,t2 = mapvar.get_background()
-    loadImages()
-    # for tower in player.towers: Icon(tower)
-    selected = None
-    speed = 3
-    wave = 1
-    play_music('music/maintheme.mp3')
     while True:
-        starttime = time.time()
-        clock.tick(fps)
-        frametime = (time.time()-starttime)*speed
-        screen.blit(level_img,(0,0))
-        mpos = pygame.mouse.get_pos()
-
-        if senderList: wave = senderList[0].update(frametime,wave)
-
-        z0,z1 = [],[]
-        for enemy in enemyList:
-            d = enemy.distance
-            if d<580: z1+=[enemy]
-            elif d<950: z0+=[enemy]
-            elif d<2392: z1+=[enemy]
-            elif d<2580: z0+=[enemy]
-            else: z0+=[enemy]
-
-        for enemy in z0:
-         enemy.move(frametime)
-         screen.blit(enemy.image,enemy.rect)
-         enemy.draw_health_bar(screen)
-         screen.blit(t1,(0,0))
-         screen.blit(t2,(0,0))
-        for enemy in z1: enemy.move(frametime); screen.blit(enemy.image,enemy.rect); enemy.draw_health_bar(screen)
-
-        for tower in towerList: tower.takeTurn(frametime,screen); drawTower(screen,tower,selected)
-
-
-        screen.blit(background,(0,0))
-
-        for icon in iconList: drawIcon(screen,icon,mpos,font)
-        selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
-        surface_temp= pygame.Surface((800,600)).convert_alpha()
-        surface_temp.fill((0,0,0,0))
-        if (len(pos)>1):
-            pygame.draw.aalines(surface_temp, (255, 255, 255), False, pos, 8)
-            if drawing:
-                guide_surface = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
-                pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
-                screen.blit(guide_surface, (0, 0))
-        dispText(screen,wave)
-        if len(pos) > 10:
-            shape_detected = detect(surface_temp)
-            if shape_detected:
-                check_collision_with_enemies(shape_detected, surface_temp, screen)
-                if shape_detected == "horizontal":
-                    font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
-                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                elif shape_detected == "vertical":
-                    font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
-                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                elif shape_detected == "diagonal_right":
-                    font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
-                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                elif shape_detected == "v_shape":
-                    font = pygame.font.SysFont('arial', 22)
-                    text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
-                    surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-        screen.blit(surface_temp,(0,0))
-        event_enemy(screen)
-        cloud_image = pygame.image.load("images/cloud.png")
-        cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
-        if draw_cloud()== True:
-            screen.blit(cloud_image, (0, 0))
+        if game_state == "menu":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    button_clicked = menu.handle_click(event.pos)
+                    if button_clicked == 0:  # CHƠI GAME
+                        game_state = "game"
+                        # Khởi tạo game
+                        mapvar.getmovelist()
+                        drawing = False
+                        pos = []
+                        background = pygame.Surface((800,600))
+                        background.set_colorkey((0,0,0))
+                        heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
+                        w,h = plank.get_size()
+                        for y in range(screenHeight//h): background.blit(plank,(screenWidth-w,y*h))
+                        for y in range(3):
+                            for x in range(screenWidth//w): background.blit(plank,(x*w,screenHeight-(y+1)*h))
+                        background.blit(money,(screenWidth-w+6,h//2-money.get_height()//2))
+                        background.blit(heart,(screenWidth-w+6,h+h//2-heart.get_height()//2))
+                        level_img,t1,t2 = mapvar.get_background()
+                        loadImages()
+                        selected = None
+                        speed = 3
+                        wave = 1
+                        play_music('music/maintheme.mp3')
+                    elif button_clicked == 1:  # HƯỚNG DẪN
+                        game_state = "instructions"
+                    elif button_clicked == 2:  # THOÁT
+                        pygame.quit()
+                        sys.exit()
             
-        pygame.display.flip()
+            menu.draw(screen, pygame.mouse.get_pos())
+            pygame.display.flip()
+            clock.tick(fps)
+
+        elif game_state == "instructions":
+            show_instructions(screen)
+            game_state = "menu"
+
+        elif game_state == "game":
+            starttime = time.time()
+            clock.tick(fps)
+            frametime = (time.time()-starttime)*speed
+            screen.blit(level_img,(0,0))
+            mpos = pygame.mouse.get_pos()
+
+            if senderList: wave = senderList[0].update(frametime,wave)
+
+            z0,z1 = [],[]
+            for enemy in enemyList:
+                d = enemy.distance
+                if d<580: z1+=[enemy]
+                elif d<950: z0+=[enemy]
+                elif d<2392: z1+=[enemy]
+                elif d<2580: z0+=[enemy]
+                else: z0+=[enemy]
+
+            for enemy in z0:
+                enemy.move(frametime)
+                screen.blit(enemy.image,enemy.rect)
+                enemy.draw_health_bar(screen)
+                screen.blit(t1,(0,0))
+                screen.blit(t2,(0,0))
+            for enemy in z1: 
+                enemy.move(frametime)
+                screen.blit(enemy.image,enemy.rect)
+                enemy.draw_health_bar(screen)
+
+            for tower in towerList: 
+                tower.takeTurn(frametime,screen)
+                drawTower(screen,tower,selected)
+
+            screen.blit(background,(0,0))
+
+            for icon in iconList: drawIcon(screen,icon,mpos,font)
+            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
+            surface_temp= pygame.Surface((800,600)).convert_alpha()
+            surface_temp.fill((0,0,0,0))
+            if (len(pos)>1):
+                pygame.draw.aalines(surface_temp, (255, 255, 255), False, pos, 8)
+                if drawing:
+                    guide_surface = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
+                    pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
+                    screen.blit(guide_surface, (0, 0))
+            dispText(screen,wave)
+            if len(pos) > 10:
+                shape_detected = detect(surface_temp)
+                if shape_detected:
+                    check_collision_with_enemies(shape_detected, surface_temp, screen)
+                    if shape_detected == "horizontal":
+                        font = pygame.font.SysFont('arial', 22)
+                        text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
+                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                    elif shape_detected == "vertical":
+                        font = pygame.font.SysFont('arial', 22)
+                        text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
+                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                    elif shape_detected == "diagonal_right":
+                        font = pygame.font.SysFont('arial', 22)
+                        text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
+                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                    elif shape_detected == "v_shape":
+                        font = pygame.font.SysFont('arial', 22)
+                        text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
+                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+            screen.blit(surface_temp,(0,0))
+            event_enemy(screen)
+            cloud_image = pygame.image.load("images/cloud.png")
+            cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
+            if draw_cloud()== True:
+                screen.blit(cloud_image, (0, 0))
+            
+            pygame.display.flip()
 
 if __name__ == '__main__':
     main()
