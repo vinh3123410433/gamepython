@@ -676,6 +676,7 @@ class Hail:
         self.image = pygame.transform.scale(self.image, (100, 100))
         if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
             self.image = pygame.transform.flip(self.image, True, False)
+        self.rect = self.image.get_rect(center=self.rect.center) 
         screen.blit(self.image, (self.x, self.y))
         print("angle", self.angle/math.pi*180)
 
@@ -941,7 +942,7 @@ def main():
                 for enemy in enemyList[:]:
                     if hail.rect.colliderect(enemy.rect):
                         enemy.kill()
-                        hailList.remove(hail)
+                        if (hail in hailList): hailList.remove(hail)
                         break
                 
             pygame.display.flip()
