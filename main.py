@@ -478,7 +478,7 @@ class Sender:
         else: self.timer = self.rate; Enemy(self.enemies[0]); del self.enemies[0]
         return wave
 
-def workEvents(selected, wave, speed, pos, drawing):
+def workEvents(selected, wave, speed, pos, drawing, spawn):
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
         if event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
@@ -510,13 +510,17 @@ def workEvents(selected, wave, speed, pos, drawing):
             if event.key == pygame.K_s and speed>1: speed-=1
             
                
-        keys = pygame.key.get_pressed()  # Lấy trạng thái phím
-
-        if keys[pygame.K_a]:
-            mpos = pygame.mouse.get_pos()
-            hailList.append(Hail(mpos[0], mpos[1]))
+        if event.type == SPAWN_HAIL:
+            spawn_hail()
 
     return selected,wave,speed, pos, drawing
+def spawn_hail():
+        pos = pygame.mouse.get_pos()
+        hail = Hail(pos[0], pos[1])
+        hailList.append(hail)
+
+SPAWN_HAIL= pygame.USEREVENT + 1
+
 
 def detect(surface_temp):
     img = pygame.surfarray.array3d(surface_temp)
@@ -672,7 +676,7 @@ class Hail:
             self.image = pygame.image.load("images/meteor2.png").convert_alpha()
         elif img==3:
             self.image = pygame.image.load("images/meteor3.png").convert_alpha()
-        self.image = pygame.transform.rotate(self.image, math.degrees(self.angle))
+        self.image = pygame.transform.rotate(self.image, 90- math.degrees(math.atan2(self.y, self.x)))
         self.image = pygame.transform.scale(self.image, (100, 100))
         if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
             self.image = pygame.transform.flip(self.image, True, False)
@@ -732,7 +736,6 @@ class Hail:
     #             self.y += dy_future / distance_future * self.speed
 
     #         self.rect.center = (self.x, self.y)
-
 
 class Menu:
     def __init__(self):
@@ -814,9 +817,10 @@ def main():
 
     mapvar.getmovelist()
 
+    pygame.time.set_timer(SPAWN_HAIL, 3000)
     drawing= False
     pos=[]
-    meteor= 1
+    spawn= True
 
     # Khởi tạo menu
     menu = Menu()
@@ -837,6 +841,7 @@ def main():
     selected = None
     speed = 3
     wave = 1
+
     play_music('music/maintheme.mp3')
     while True:
         if game_state == "menu":
@@ -889,11 +894,9 @@ def main():
 
             for tower in towerList: tower.takeTurn(frametime,screen); drawTower(screen,tower,selected)
 
-
             screen.blit(background,(0,0))
-
             for icon in iconList: drawIcon(screen,icon,mpos,font)
-            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
+            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing, spawn)
             surface_temp= pygame.Surface((800,600)).convert_alpha()
             surface_temp.fill((0,0,0,0))
             if (len(pos)>1):
@@ -933,7 +936,7 @@ def main():
                     enemy.move(frametime)
                 pygame.display.flip()
 
-
+            
             for hail in hailList[:]:
                 
                 hail.move(screen)
@@ -943,7 +946,7 @@ def main():
                     if hail.rect.colliderect(enemy.rect):
                         enemy.kill()
                         if (hail in hailList): hailList.remove(hail)
-                        break
+                        
                 
             pygame.display.flip()
 
