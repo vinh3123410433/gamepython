@@ -46,7 +46,7 @@ def imgLoad(file,size=None):
 class Player:
 
     def __init__(self):
-        self.health = 10
+        self.health = 1
         self.money = 30000000
         self.score = 0
         self.level = 1
@@ -532,9 +532,9 @@ class Menu:
         self.font_big = pygame.font.Font(None, 74)
         self.font_small = pygame.font.Font(None, 36)
         self.buttons = [
-            {'text': 'CHƠI GAME', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'HƯỚNG DẪN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'THOÁT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
+            {'text': 'START', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'HUONG DAN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'ECS', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
         ]
         self.game_title = self.font_big.render('TOWER DEFENSE', True, (255, 215, 0))
         self.title_rect = self.game_title.get_rect(center=(screenWidth // 2, 100))
@@ -565,15 +565,16 @@ def show_instructions(screen):
     running = True
     font = pygame.font.Font(None, 36)
     instructions = [
-        "HƯỚNG DẪN CHƠI:",
-        "- Đặt các tháp để bảo vệ đường đi",
-        "- Tiêu diệt kẻ địch để nhận tiền",
-        "- Bảo vệ căn cứ không để kẻ địch đi qua",
-        "- Nhấn SPACE để bắt đầu wave quái",
-        "- Vẽ hình tương ứng với ký hiệu trên quái để tiêu diệt",
+        "HUONG DAN CHOI:",
+        "- Dat cac thap de bao ve duong di",
+        "- Tieu diet ke dich de nhan tien",
+        "- Bao ve can cu khong de ke dich di qua",
+        "- Nhan SPACE de bat dau wave quai",
+        "- Ve hinh tuong ung voi ky hieu tren quai de tieu diet",
         "",
-        "Nhấn ESC để quay lại"
+        "Nhan ESC de quay lai"
     ]
+
     
     while running:
         for event in pygame.event.get():
@@ -621,6 +622,39 @@ class Sender:
             del self.enemies[0]
         return wave
 
+class GameOver:
+    def __init__(self):
+        self.font_big = pygame.font.Font(None, 74)
+        self.font_small = pygame.font.Font(None, 36)
+        self.game_over_text = self.font_big.render('GAME OVER', True, (255, 0, 0))
+        self.title_rect = self.game_over_text.get_rect(center=(screenWidth // 2, 200))
+        
+        self.menu_button = {
+            'text': 'QUAY LAI MENU',
+            'color': (255, 255, 255),
+            'hover_color': (0, 255, 0),
+            'rect': None
+        }
+        self.initialize_button()
+
+    def initialize_button(self):
+        text_surface = self.font_small.render(self.menu_button['text'], True, self.menu_button['color'])
+        text_rect = text_surface.get_rect(center=(screenWidth // 2, 300))
+        self.menu_button['rect'] = text_rect
+
+    def draw(self, screen, mouse_pos):
+        screen.fill((0, 0, 0))
+        screen.blit(self.game_over_text, self.title_rect)
+        
+        color = self.menu_button['hover_color'] if self.menu_button['rect'].collidepoint(mouse_pos) else self.menu_button['color']
+        text_surface = self.font_small.render(self.menu_button['text'], True, color)
+        screen.blit(text_surface, self.menu_button['rect'])
+
+    def handle_click(self, mouse_pos):
+        if self.menu_button['rect'].collidepoint(mouse_pos):
+            return True
+        return False
+
 def main():
     pygame.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -640,6 +674,7 @@ def main():
     spawn= True
 
     menu = Menu()
+    game_over = GameOver()
     game_state = "menu"
 
     background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
@@ -685,6 +720,12 @@ def main():
             starttime = time.time()
             clock.tick(fps)
             frametime = (time.time()-starttime)*speed
+            
+            # Kiểm tra health = 0
+            if player.health <= 0:
+                game_state = "game_over"
+                continue
+                
             screen.blit(level_img,(0,0))
             mpos = pygame.mouse.get_pos()
 
@@ -768,6 +809,33 @@ def main():
                     explosionList.remove(explosion)
                         
             pygame.display.flip()
+
+        elif game_state == "game_over":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if game_over.handle_click(event.pos):
+                        # Reset game state
+                        player.health = 1
+                        player.money = 30000000
+                        player.score = 0
+                        player.level = 1
+                        player.exp = 0
+                        player.exp_to_next_level = 1000
+                        enemyList.clear()
+                        bulletList.clear()
+                        iconList.clear()
+                        senderList.clear()
+                        startList.clear()
+                        hailList.clear()
+                        explosionList.clear()
+                        game_state = "menu"
+
+            game_over.draw(screen, pygame.mouse.get_pos())
+            pygame.display.flip()
+            clock.tick(fps)
 
 if __name__ == '__main__':
      main()
