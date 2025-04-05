@@ -2,42 +2,106 @@ import pygame
 import json
 import os
 from datetime import datetime
+from save_system import SaveSystem
 
 # Hệ thống Achievements
 class AchievementSystem:
     def __init__(self):
-        self.achievements = {
-            'kill_100': {'name': 'SAT THU', 'desc': 'Tiêu diệt 100 quái', 'unlocked': False},
-            'survive_10': {'name': 'KIEN NGHI', 'desc': 'Sống sót 10 wave', 'unlocked': False},
-            'level_10': {'name': 'HUYEN THOAI', 'desc': 'Đạt level 10', 'unlocked': False},
-            'money_1000': {'name': 'TY PHU', 'desc': 'Có 1000 tiền', 'unlocked': False}
-        }
-        self.load_achievements()
+        self.save_system = SaveSystem()
+        self.achievements = self.save_system.get_achievements()
+        self.notifications = []
+        self.notification_duration = 3000  # 3 giây
         
-    def load_achievements(self):
-        if os.path.exists('achievements.json'):
-            with open('achievements.json', 'r') as f:
-                self.achievements = json.load(f)
-                
-    def save_achievements(self):
-        with open('achievements.json', 'w') as f:
-            json.dump(self.achievements, f)
+    def check_achievements(self, player):
+        current_time = pygame.time.get_ticks()
+        
+        # Kiểm tra và cập nhật thành tích
+        if not self.achievements['kill_100']['unlocked'] and player.score >= 1000:
+            self.unlock_achievement('kill_100')
+        if not self.achievements['survive_10']['unlocked'] and player.wave >= 10:
+            self.unlock_achievement('survive_10')
+        if not self.achievements['level_10']['unlocked'] and player.level >= 10:
+            self.unlock_achievement('level_10')
+        if not self.achievements['money_1000']['unlocked'] and player.money >= 1000:
+            self.unlock_achievement('money_1000')
             
-    def check_achievement(self, achievement_id, player):
-        if not self.achievements[achievement_id]['unlocked']:
-            if achievement_id == 'kill_100' and player.score >= 1000:
-                self.unlock_achievement(achievement_id)
-            elif achievement_id == 'survive_10' and player.wave >= 10:
-                self.unlock_achievement(achievement_id)
-            elif achievement_id == 'level_10' and player.level >= 10:
-                self.unlock_achievement(achievement_id)
-            elif achievement_id == 'money_1000' and player.money >= 1000:
-                self.unlock_achievement(achievement_id)
+        # Cập nhật thông báo
+        self.notifications = [n for n in self.notifications if current_time - n['time'] < self.notification_duration]
                 
     def unlock_achievement(self, achievement_id):
-        self.achievements[achievement_id]['unlocked'] = True
-        self.save_achievements()
-        return self.achievements[achievement_id]['name']
+        if achievement_id in self.achievements and not self.achievements[achievement_id]['unlocked']:
+            self.achievements[achievement_id]['unlocked'] = True
+            self.save_system.update_achievement(achievement_id, True)
+            self.notifications.append({
+                'text': f"Thành tích mới: {self.achievements[achievement_id]['name']}",
+                'time': pygame.time.get_ticks()
+            })
+            return self.achievements[achievement_id]['name']
+        return None
+
+    def draw_notifications(self, screen):
+        if not self.notifications:
+            return
+            
+        font = pygame.font.Font(None, 32)
+        y_offset = 10
+        
+        for notification in self.notifications:
+            text = font.render(notification['text'], True, (255, 255, 255))
+            text_rect = text.get_rect(topright=(screen.get_width() - 10, y_offset))
+            
+            # Vẽ background
+            padding = 10
+            bg_rect = text_rect.inflate(padding * 2, padding * 2)
+            bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+            bg_surface.fill((0, 0, 0, 180))
+            screen.blit(bg_surface, bg_rect)
+            
+            # Vẽ text
+            screen.blit(text, text_rect)
+            y_offset += bg_rect.height + 5
+
+    def draw_progress(self, screen):
+        font = pygame.font.Font(None, 24)
+        y_offset = screen.get_height() - 150
+        x_offset = 10
+        
+        # Vẽ background cho tất cả thanh tiến độ
+        visible_achievements = [a for a in self.achievements.values() if not a['unlocked']]
+        if not visible_achievements:
+            return
+            
+        total_height = len(visible_achievements) * 30
+        bg_rect = pygame.Rect(x_offset, y_offset, 200, total_height + 10)
+        bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        bg_surface.fill((0, 0, 0, 180))
+        screen.blit(bg_surface, bg_rect)
+        
+        for achievement in visible_achievements:
+            # Vẽ tên thành tích
+            text = font.render(achievement['name'], True, (255, 255, 255))
+            screen.blit(text, (x_offset + 5, y_offset + 5))
+            
+            # Vẽ thanh tiến độ
+            progress_rect = pygame.Rect(x_offset + 5, y_offset + 25, 190, 5)
+            pygame.draw.rect(screen, (100, 100, 100), progress_rect)
+            
+            # Tính phần trăm hoàn thành
+            if achievement['name'] == 'SAT THU':
+                progress = min(1.0, player.score / 1000)
+            elif achievement['name'] == 'KIEN NGHI':
+                progress = min(1.0, player.wave / 10)
+            elif achievement['name'] == 'HUYEN THOAI':
+                progress = min(1.0, player.level / 10)
+            elif achievement['name'] == 'TY PHU':
+                progress = min(1.0, player.money / 1000)
+                
+            if progress > 0:
+                progress_width = int(190 * progress)
+                progress_rect = pygame.Rect(x_offset + 5, y_offset + 25, progress_width, 5)
+                pygame.draw.rect(screen, (0, 255, 0), progress_rect)
+                
+            y_offset += 30
 
 # Hệ thống Power-ups
 class PowerUpSystem:
@@ -76,18 +140,85 @@ class PowerUpSystem:
 # Hệ thống Shop
 class ShopSystem:
     def __init__(self):
-        self.items = {
-            'max_health': {'name': 'Tăng Máu Tối Đa', 'cost': 500, 'effect': lambda player: setattr(player, 'max_health', player.max_health + 1)},
-            'move_speed': {'name': 'Tăng Tốc Độ', 'cost': 300, 'effect': lambda player: setattr(player, 'move_speed', player.move_speed + 0.5)},
-            'base_damage': {'name': 'Tăng Sát Thương', 'cost': 400, 'effect': lambda player: setattr(player, 'damage', player.damage + 1)}
-        }
+        self.save_system = SaveSystem()
+        self.items = self.save_system.get_shop_items()
+        self.fonts = {}
         
+    def get_font(self, size):
+        if size not in self.fonts:
+            self.fonts[size] = pygame.font.Font(None, size)
+        return self.fonts[size]
+        
+    def draw_shop(self, screen):
+        # Vẽ background
+        screen.fill((0, 0, 0))
+        
+        # Vẽ tiêu đề
+        title = self.get_font(48).render("CỬA HÀNG", True, (255, 215, 0))
+        title_rect = title.get_rect(centerx=screen.get_width() // 2, y=50)
+        screen.blit(title, title_rect)
+        
+        # Vẽ số tiền hiện tại
+        money_text = self.get_font(36).render(f"Tiền: {self.save_system.get_money()}", True, (255, 215, 0))
+        money_rect = money_text.get_rect(centerx=screen.get_width() // 2, y=100)
+        screen.blit(money_text, money_rect)
+        
+        # Vẽ hướng dẫn
+        guide_text = self.get_font(24).render("Nhấn ESC để quay lại menu", True, (200, 200, 200))
+        guide_rect = guide_text.get_rect(centerx=screen.get_width() // 2, y=screen.get_height() - 50)
+        screen.blit(guide_text, guide_rect)
+        
+        # Vẽ các item
+        y_offset = 200
+        for item_id, item in self.items.items():
+            if not item['bought']:
+                # Vẽ background cho item
+                item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
+                pygame.draw.rect(screen, (50, 50, 50), item_rect)
+                pygame.draw.rect(screen, (100, 100, 100), item_rect, 2)
+                
+                # Vẽ tên item
+                name_text = self.get_font(36).render(item['name'], True, (255, 255, 255))
+                name_rect = name_text.get_rect(midleft=(item_rect.left + 20, item_rect.centery - 15))
+                screen.blit(name_text, name_rect)
+                
+                # Vẽ giá
+                cost_text = self.get_font(24).render(f"Giá: {item['cost']} tiền", True, (255, 215, 0))
+                cost_rect = cost_text.get_rect(midleft=(item_rect.left + 20, item_rect.centery + 15))
+                screen.blit(cost_text, cost_rect)
+                
+                # Vẽ nút mua
+                buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
+                pygame.draw.rect(screen, (0, 200, 0), buy_rect)
+                buy_text = self.get_font(24).render("MUA", True, (255, 255, 255))
+                buy_text_rect = buy_text.get_rect(center=buy_rect.center)
+                screen.blit(buy_text, buy_text_rect)
+                
+                y_offset += 100
+            else:
+                # Vẽ item đã mua
+                item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
+                pygame.draw.rect(screen, (30, 30, 30), item_rect)
+                pygame.draw.rect(screen, (100, 100, 100), item_rect, 2)
+                
+                name_text = self.get_font(36).render(item['name'], True, (150, 150, 150))
+                name_rect = name_text.get_rect(midleft=(item_rect.left + 20, item_rect.centery - 15))
+                screen.blit(name_text, name_rect)
+                
+                bought_text = self.get_font(24).render("Đã mua", True, (0, 200, 0))
+                bought_rect = bought_text.get_rect(midleft=(item_rect.left + 20, item_rect.centery + 15))
+                screen.blit(bought_text, bought_rect)
+                
+                y_offset += 100
+                
     def buy_item(self, item_id, player):
-        if item_id in self.items and player.money >= self.items[item_id]['cost']:
-            player.money -= self.items[item_id]['cost']
-            self.items[item_id]['effect'](player)
+        if self.save_system.buy_shop_item(item_id):
+            player.money = self.save_system.get_money()
             return True
         return False
+        
+    def get_total_health(self):
+        return self.save_system.get_bought_health()
 
 # Hệ thống Daily Challenges
 class DailyChallengeSystem:

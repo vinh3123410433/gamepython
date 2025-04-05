@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import pygame, sys, os, time, math, random, cv2, numpy
 from achievements import AchievementSystem  # Thêm import
+from features import ShopSystem
+from save_system import SaveSystem
 
 pos=[]
 
@@ -47,8 +49,10 @@ def imgLoad(file,size=None):
 class Player:
 
     def __init__(self):
-        self.health = 1
-        self.money = 0
+        self.save_system = SaveSystem()
+        self.shop_system = ShopSystem()
+        self.health = self.shop_system.get_total_health()
+        self.money = self.save_system.get_money()
         self.score = 0
         self.level = 1
         self.exp = 0
@@ -67,6 +71,10 @@ class Player:
         self.health += 1
         self.money += 1000
         print(f"Level Up! Bạn đã đạt level {self.level}!")
+
+    def update_money(self, amount):
+        self.money = amount
+        self.save_system.update_money(amount)
 
 player = Player()
 
@@ -114,7 +122,7 @@ mapvar = Map()
 
 class Enemy:
     layers = [ # Name Health Speed CashReward ExpReward
-        ('red',      1, 5.0, 0, 10),
+        ('red',      1, 5.0, 100, 10),
         ('darkblue', 1, 5.0, 0, 15),
         ('green',    1, 5.2, 0, 20),
         ('yellow',   1, 6.0, 0, 25),
@@ -199,6 +207,7 @@ class Enemy:
             enemyList.remove(self)
         print(f"Enemy {self.name} popped!")
         player.score += 100
+        player.money += self.cashprize
         player.add_exp(self.exp_reward)
         try:
             play_sound('sounds/pop3.mp3', 0.3)
@@ -548,8 +557,9 @@ class Menu:
         self.font_small = pygame.font.Font(None, 36)
         self.buttons = [
             {'text': 'START', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'SHOP', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
             {'text': 'HUONG DAN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'ECS', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
+            {'text': 'ESC', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
         ]
         self.game_title = self.font_big.render('TOWER DEFENSE', True, (255, 215, 0))
         self.title_rect = self.game_title.get_rect(center=(screenWidth // 2, 100))
@@ -565,6 +575,13 @@ class Menu:
     def draw(self, screen, mouse_pos):
         screen.fill((0, 0, 0))
         screen.blit(self.game_title, self.title_rect)
+        
+        # Vẽ số tiền hiện tại
+        money_font = pygame.font.Font(None, 36)
+        money_text = money_font.render(f"Tiền: {player.money}", True, (255, 215, 0))
+        money_rect = money_text.get_rect(center=(screenWidth // 2, 200))
+        screen.blit(money_text, money_rect)
+        
         for button in self.buttons:
             color = button['hover_color'] if button['rect'].collidepoint(mouse_pos) else button['color']
             text_surface = self.font_small.render(button['text'], True, color)
@@ -678,8 +695,9 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
 
-    # Thêm hệ thống thành tích
+    # Khởi tạo các hệ thống
     achievement_system = AchievementSystem()
+    shop_system = ShopSystem()
     
     # Add this line to load enemy images
     loadImages()
@@ -722,12 +740,49 @@ def main():
                     if button_clicked == 0:
                         game_state = "game"
                     elif button_clicked == 1:
-                        game_state = "instructions"
+                        game_state = "shop"
                     elif button_clicked == 2:
+                        game_state = "instructions"
+                    elif button_clicked == 3:
                         pygame.quit()
                         sys.exit()
 
             menu.draw(screen, pygame.mouse.get_pos())
+            pygame.display.flip()
+            clock.tick(fps)
+
+        elif game_state == "shop":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        game_state = "menu"
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    # Kiểm tra click vào các item trong shop
+                    y_offset = 200  # Bắt đầu từ vị trí y của item đầu tiên
+                    for item_id, item in shop_system.items.items():
+                        if not item['bought']:
+                            # Tạo rect cho item
+                            item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
+                            # Tạo rect cho nút mua
+                            buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
+                            
+                            # Kiểm tra click vào nút mua
+                            if buy_rect.collidepoint(mouse_pos):
+                                if shop_system.buy_item(item_id, player):
+                                    print(f"Đã mua {item['name']} thành công!")
+                                    # Phát âm thanh mua hàng
+                                    try:
+                                        play_sound('sounds/buy.mp3', 0.3)
+                                    except:
+                                        print("Không tìm thấy file âm thanh")
+                            y_offset += 100  # Khoảng cách giữa các item
+
+            screen.fill((0, 0, 0))
+            shop_system.draw_shop(screen)
             pygame.display.flip()
             clock.tick(fps)
 
@@ -753,6 +808,9 @@ def main():
 
             # Kiểm tra thành tích
             achievement_system.check_achievements(player)
+
+            # Cập nhật tiền
+            player.update_money(player.money)
 
             z0,z1 = [],[]
             for enemy in enemyList:
@@ -847,8 +905,8 @@ def main():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if game_over.handle_click(event.pos):
                         # Reset game state
-                        player.health = 1
-                        player.money = 30000000
+                        player.health = shop_system.get_total_health()
+                        player.money = player.save_system.get_money()
                         player.score = 0
                         player.level = 1
                         player.exp = 0
