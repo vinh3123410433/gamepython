@@ -47,7 +47,6 @@ def imgLoad(file,size=None):
     return pygame.transform.scale(image,size) if size else image
 
 class Player:
-
     def __init__(self):
         self.save_system = SaveSystem()
         self.shop_system = ShopSystem()
@@ -58,6 +57,16 @@ class Player:
         self.exp = 0
         self.exp_to_next_level = 1000
         self.wave = 1  # Thêm thuộc tính wave
+        self.font = None  # Khởi tạo font là None
+        self.x = screenWidth // 2
+        self.y = screenHeight // 2
+        self.speed = 5
+        self.max_health = self.health
+
+    def get_font(self):
+        if self.font is None:
+            self.font = pygame.font.Font(None, 36)
+        return self.font
 
     def add_exp(self, amount):
         self.exp += amount
@@ -76,7 +85,37 @@ class Player:
         self.money = amount
         self.save_system.update_money(amount)
 
-player = Player()
+    def draw(self, screen):
+        # Vẽ player
+        pygame.draw.circle(screen, (0, 255, 0), (self.x, self.y), 20)
+        
+        # Vẽ thanh máu
+        health_width = 40
+        health_height = 5
+        health_x = self.x - health_width // 2
+        health_y = self.y - 30
+        
+        # Vẽ background thanh máu
+        pygame.draw.rect(screen, (255, 0, 0), (health_x, health_y, health_width, health_height))
+        # Vẽ máu hiện tại
+        current_health_width = int(health_width * (self.health / self.max_health))
+        pygame.draw.rect(screen, (0, 255, 0), (health_x, health_y, current_health_width, health_height))
+        
+        # Vẽ điểm số
+        score_text = self.get_font().render(f"Diem: {self.score}", True, (255, 255, 255))
+        screen.blit(score_text, (10, 10))
+        
+        # Vẽ level
+        level_text = self.get_font().render(f"Level: {self.level}", True, (255, 255, 255))
+        screen.blit(level_text, (10, 50))
+        
+        # Vẽ wave
+        wave_text = self.get_font().render(f"Wave: {self.wave}", True, (255, 255, 255))
+        screen.blit(wave_text, (10, 90))
+        
+        # Vẽ tiền
+        money_text = self.get_font().render(f"Tien: {self.money}", True, (255, 215, 0))
+        screen.blit(money_text, (10, 130))
 
 # store images using a dictionary 
 EnemyImageArray = dict()
@@ -209,6 +248,8 @@ class Enemy:
         player.score += 100
         player.money += self.cashprize
         player.add_exp(self.exp_reward)
+        # Lưu tiền sau khi giết quái
+        player.save_system.update_money(player.money)
         try:
             play_sound('sounds/pop3.mp3', 0.3)
         except:
@@ -712,6 +753,10 @@ def main():
     achievement_system = AchievementSystem()
     shop_system = ShopSystem()
     
+    # Khởi tạo player sau khi pygame đã được khởi tạo
+    global player
+    player = Player()
+    
     # Add this line to load enemy images
     loadImages()
     
@@ -753,6 +798,8 @@ def main():
                     if button_clicked == 0:
                         game_state = "game"
                     elif button_clicked == 1:
+                        # Cập nhật tiền trước khi vào shop
+                        player.money = player.save_system.get_money()
                         game_state = "shop"
                     elif button_clicked == 2:
                         game_state = "instructions"
@@ -792,6 +839,8 @@ def main():
                                         play_sound('sounds/buy.mp3', 0.3)
                                     except:
                                         print("Không tìm thấy file âm thanh")
+                                else:
+                                    print("Không đủ tiền để mua!")
                             y_offset += 100  # Khoảng cách giữa các item
 
             screen.fill((0, 0, 0))
