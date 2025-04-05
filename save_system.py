@@ -69,7 +69,7 @@ class SaveSystem:
         return False
 
     def get_total_health(self):
-        total_health = 3  # Máu mặc định
+        total_health = 1  # Máu mặc định
         for item_id, item in self.data['shop_items'].items():
             if item['bought'] > 0:
                 health_amount = int(item_id.split('_')[1])
