@@ -14,9 +14,9 @@ class SaveSystem:
                 'money_1000': {'name': 'TY PHU', 'desc': 'Co 1000 tien', 'unlocked': False}
             },
             'shop_items': {
-                'health_1': {'name': 'Tang 1 Mau', 'cost': 100, 'bought': 0},
-                'health_2': {'name': 'Tang 2 Mau', 'cost': 250, 'bought': 0},
-                'health_3': {'name': 'Tang 3 Mau', 'cost': 500, 'bought': 0}
+                'health_1': {'name': 'Tang 1 Mau', 'cost': 1000, 'bought': 0},
+                'health_2': {'name': 'Tang 2 Mau', 'cost': 2550, 'bought': 0},
+                'health_3': {'name': 'Tang 3 Mau', 'cost': 5500, 'bought': 0}
             },
             'last_save': None
         }
@@ -69,7 +69,7 @@ class SaveSystem:
         return False
 
     def get_total_health(self):
-        total_health = 3  # Máu mặc định
+        total_health = 1  # Máu mặc định
         for item_id, item in self.data['shop_items'].items():
             if item['bought'] > 0:
                 health_amount = int(item_id.split('_')[1])

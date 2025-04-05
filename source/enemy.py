@@ -6,7 +6,7 @@ from setting import fps, screenWidth, screenHeight, enemyList, EnemyImageArray,p
 
 class Enemy:
     layers = [ # Name Health Speed CashReward ExpReward
-        ('red',      1, 5.0, 0, 10),
+        ('red',      1, 5.0, 100, 10),
         ('darkblue', 1, 5.0, 0, 15),
         ('green',    1, 5.2, 0, 20),
         ('yellow',   1, 6.0, 0, 25),
