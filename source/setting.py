@@ -9,7 +9,7 @@ screenHeight = 600
 #
 squareSize = 50
 # Original upscaled (Frames per second)
-fps = 30
+fps = 60
 
 enemyList = []
 bulletList = []
