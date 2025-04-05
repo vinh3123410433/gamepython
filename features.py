@@ -7,10 +7,10 @@ from datetime import datetime
 class AchievementSystem:
     def __init__(self):
         self.achievements = {
-            'kill_100': {'name': 'Sát Thủ', 'desc': 'Tiêu diệt 100 quái', 'unlocked': False},
-            'survive_10': {'name': 'Kiên Nghị', 'desc': 'Sống sót 10 wave', 'unlocked': False},
-            'level_10': {'name': 'Huyền Thoại', 'desc': 'Đạt level 10', 'unlocked': False},
-            'money_1000': {'name': 'Tỷ Phú', 'desc': 'Có 1000 tiền', 'unlocked': False}
+            'kill_100': {'name': 'SAT THU', 'desc': 'Tiêu diệt 100 quái', 'unlocked': False},
+            'survive_10': {'name': 'KIEN NGHI', 'desc': 'Sống sót 10 wave', 'unlocked': False},
+            'level_10': {'name': 'HUYEN THOAI', 'desc': 'Đạt level 10', 'unlocked': False},
+            'money_1000': {'name': 'TY PHU', 'desc': 'Có 1000 tiền', 'unlocked': False}
         }
         self.load_achievements()
         
