@@ -832,14 +832,15 @@ def main():
                         buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
                         
                         if buy_rect.collidepoint(mouse_pos):
-                            if shop_system.buy_item(item_id, player):
-                                try:
-                                    play_sound('sounds/buy.mp3', 0.3)
-                                except:
-                                    print("Khong tim thay file am thanh")
-                                print(f"Da mua {item['name']}")
-                                # Cập nhật lại tiền sau khi mua
-                                player.money = player.save_system.get_money()
+                            if player.money >= item['cost']:
+                                if shop_system.buy_item(item_id, player):
+                                    try:
+                                        play_sound('sounds/buy.mp3', 0.3)
+                                    except:
+                                        print("Khong tim thay file am thanh")
+                                    print(f"Da mua {item['name']}")
+                                    # Cập nhật lại tiền sau khi mua
+                                    player.money = player.save_system.get_money()
                             else:
                                 print("Khong du tien de mua!")
                         y_offset += 100
