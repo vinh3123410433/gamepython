@@ -333,6 +333,7 @@ def buy_hail():
     hail_cost = 100  # Chi phí để mua một thiên thạch
     if player.money >= hail_cost:
         player.money -= hail_cost
+        player.save_system.update_money(player.money)  # Lưu tiền sau khi mua
         spawn_hail()
         return True
     return False
@@ -367,9 +368,13 @@ def workEvents(selected, wave, speed, pos, drawing, spawn):
             if event.key == pygame.K_s and speed>1: speed-=1
             if event.key == pygame.K_h:  # Thêm phím tắt H để mua thiên thạch
                 if buy_hail():
-                    print("Đã mua thiên thạch thành công!")
+                    print("Da mua thien thach thanh cong!")
+                    try:
+                        play_sound('sounds/buy.mp3', 0.3)
+                    except:
+                        print("Khong tim thay file am thanh")
                 else:
-                    print("Không đủ tiền để mua thiên thạch!")
+                    print("Khong du tien de mua thien thach!")
         if event.type == SPAWN_HAIL:
             spawn_hail()
 
@@ -821,27 +826,23 @@ def main():
                         game_state = "menu"
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
-                    # Kiểm tra click vào các item trong shop
-                    y_offset = 200  # Bắt đầu từ vị trí y của item đầu tiên
+                    y_offset = 200
                     for item_id, item in shop_system.items.items():
-                        if not item['bought']:
-                            # Tạo rect cho item
-                            item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
-                            # Tạo rect cho nút mua
-                            buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
-                            
-                            # Kiểm tra click vào nút mua
-                            if buy_rect.collidepoint(mouse_pos):
-                                if shop_system.buy_item(item_id, player):
-                                    print(f"Đã mua {item['name']} thành công!")
-                                    # Phát âm thanh mua hàng
-                                    try:
-                                        play_sound('sounds/buy.mp3', 0.3)
-                                    except:
-                                        print("Không tìm thấy file âm thanh")
-                                else:
-                                    print("Không đủ tiền để mua!")
-                            y_offset += 100  # Khoảng cách giữa các item
+                        item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
+                        buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
+                        
+                        if buy_rect.collidepoint(mouse_pos):
+                            if shop_system.buy_item(item_id, player):
+                                try:
+                                    play_sound('sounds/buy.mp3', 0.3)
+                                except:
+                                    print("Khong tim thay file am thanh")
+                                print(f"Da mua {item['name']}")
+                                # Cập nhật lại tiền sau khi mua
+                                player.money = player.save_system.get_money()
+                            else:
+                                print("Khong du tien de mua!")
+                        y_offset += 100
 
             screen.fill((0, 0, 0))
             shop_system.draw_shop(screen)
