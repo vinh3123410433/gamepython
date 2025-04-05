@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import pygame, sys, os, time, math, random, cv2, numpy
+from achievements import AchievementSystem  # Thêm import
+from features import ShopSystem
+from save_system import SaveSystem
 
 pos=[]
 
@@ -13,14 +16,12 @@ squareSize = 50
 fps = 30
 
 enemyList = []
-towerList = []
 bulletList = []
 iconList = []
 senderList = []
 startList= []
 hailList = []
 explosionList = []
-# initalize empty arrays of items on new map
 
 colors = { # R,G,B
     'yellow':   (255,255,0),
@@ -36,18 +37,17 @@ colors = { # R,G,B
 # Optional music
 def play_music(file, volume=0.65, loop=-1):
     pygame.mixer.music.load(file)
-    # load music from file mp3
     pygame.mixer.music.set_volume(volume)
     pygame.mixer.music.play(loop)
-# comment out if you don't want music
 
 def stop_music(): pygame.mixer.music.stop()
-#
+
 def imgLoad(file,size=None):
     image = pygame.image.load(file).convert_alpha()
     return pygame.transform.scale(image,size) if size else image
 
 class Player:
+<<<<<<< HEAD
     towers = [ # Name of monkey tower
         'Dart Monkey',
         'Tack Shooter',
@@ -63,14 +63,32 @@ class Player:
         'Spike Factory',
         'Road Spikes',
         'Exploding Pineapple',]
+=======
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
     def __init__(self):
-        self.health = 10
-        self.money = 30000000
+        self.save_system = SaveSystem()
+        self.shop_system = ShopSystem()
+        self.health = self.shop_system.get_total_health()
+        self.money = self.save_system.get_money()
         self.score = 0
         self.level = 1
         self.exp = 0
         self.exp_to_next_level = 1000
+<<<<<<< HEAD
         self.tower_upgrades = {}  # Lưu trữ trạng thái nâng cấp của tháp
+=======
+        self.wave = 1  # Thêm thuộc tính wave
+        self.font = None  # Khởi tạo font là None
+        self.x = screenWidth // 2
+        self.y = screenHeight // 2
+        self.speed = 5
+        self.max_health = self.health
+
+    def get_font(self):
+        if self.font is None:
+            self.font = pygame.font.Font(None, 36)
+        return self.font
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
 
     def add_exp(self, amount):
         self.exp += amount
@@ -85,16 +103,50 @@ class Player:
         self.money += 1000
         print(f"Level Up! Bạn đã đạt level {self.level}!")
 
-player = Player()
+    def update_money(self, amount):
+        self.money = amount
+        self.save_system.update_money(amount)
 
+    def draw(self, screen):
+        # Vẽ player
+        pygame.draw.circle(screen, (0, 255, 0), (self.x, self.y), 20)
+        
+        # Vẽ thanh máu
+        health_width = 40
+        health_height = 5
+        health_x = self.x - health_width // 2
+        health_y = self.y - 30
+        
+        # Vẽ background thanh máu
+        pygame.draw.rect(screen, (255, 0, 0), (health_x, health_y, health_width, health_height))
+        # Vẽ máu hiện tại
+        current_health_width = int(health_width * (self.health / self.max_health))
+        pygame.draw.rect(screen, (0, 255, 0), (health_x, health_y, current_health_width, health_height))
+        
+        # Vẽ điểm số
+        score_text = self.get_font().render(f"Diem: {self.score}", True, (255, 255, 255))
+        screen.blit(score_text, (10, 10))
+        
+        # Vẽ level
+        level_text = self.get_font().render(f"Level: {self.level}", True, (255, 255, 255))
+        screen.blit(level_text, (10, 50))
+        
+        # Vẽ wave
+        wave_text = self.get_font().render(f"Wave: {self.wave}", True, (255, 255, 255))
+        screen.blit(wave_text, (10, 90))
+        
+        # Vẽ tiền
+        money_text = self.get_font().render(f"Tien: {self.money}", True, (255, 215, 0))
+        screen.blit(money_text, (10, 130))
 
 # store images using a dictionary 
 EnemyImageArray = dict()
+<<<<<<< HEAD
 TowerImageArray = dict()
-def loadImages():
-    for tower in player.towers: TowerImageArray[tower] = imgLoad('towers/'+tower.lower()+'.png')
-    # load selected tower
+=======
 
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
+def loadImages():
     bloon = imgLoad('enemies/bloonImg.png')
     EnemyImageArray['red'] = bloon
     width,height = bloon.get_size()
@@ -104,18 +156,19 @@ def loadImages():
             for y in range(height):
                 p = image.get_at((x,y))[:-1]
                 if p not in ((0,0,0),(255,255,255)):
-                    # check if in rgb colour bounds
                     c = colors[name]
                     r,g,b = p[0]*c[0]/255, p[0]*c[1]/255, p[0]*c[2]/255
                     image.set_at((x,y),(min(int(r),255),min(int(g),255),min(int(b),255)))
         EnemyImageArray[name] = image
 
+<<<<<<< HEAD
 def get_angle(a,b):
     # return 180-(math.atan2(b[0]-a[0],b[1]-a[1]))/(math.pi/180)
     return (math.atan2(b[1]-a[1],b[0]-a[0]))/(math.pi/180) +90
 
+=======
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
 class Map:
-    # setup map
     def __init__(self):
         self.map = 'monkey lane'
         self.loadmap()
@@ -132,32 +185,26 @@ class Map:
             self.pathpoints+=[0]
 
     def get_background(self):
-        # load from background png
         background = imgLoad('maps/%s/image.png' % self.map)
         background2 = imgLoad('maps/%s/image2.png' % self.map).convert_alpha()
         background3 = imgLoad('maps/%s/image3.png' % self.map).convert_alpha()
-        # for i in range(len(self.targets)-1):
-        #     pygame.draw.line(background,(0,0,0),self.targets[i],self.targets[i+1])
-
         return background,background2,background3
 
 mapvar = Map()
 
-
-
 class Enemy:
     layers = [ # Name Health Speed CashReward ExpReward
-        ('red',      1, 1.0, 0, 10),
-        ('darkblue', 1, 1.0, 0, 15),
-        ('green',    1, 1.2, 0, 20),
-        ('yellow',   1, 2.0, 0, 25),
-        ('purple',   2, 1.5, 0, 30),
-        ('brown',    2, 1.8, 0, 35),
-        ('magenta',  3, 1.3, 0, 40),
-        ('aqua',     3, 1.6, 0, 45),]
+        ('red',      1, 5.0, 100, 10),
+        ('darkblue', 1, 5.0, 0, 15),
+        ('green',    1, 5.2, 0, 20),
+        ('yellow',   1, 6.0, 0, 25),
+        ('purple',   2, 5.5, 0, 30),
+        ('brown',    2, 5.8, 0, 35),
+        ('magenta',  3, 5.3, 0, 40),
+        ('aqua',     3, 5.6, 0, 45),]
 
-    # initalize enemy
     def __init__(self,layer):
+<<<<<<< HEAD
         self.layer = layer #index
         self.setLayer()
         self.targets = mapvar.targets
@@ -172,6 +219,21 @@ class Enemy:
         self.event= random.randint(0, 10)
         self.start= 0
         enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
+=======
+        self.layer = layer
+        self.setLayer()
+        self.targets = mapvar.targets
+        self.pos = list(self.targets[0])
+        self.target = 0
+        self.next_target()
+        self.rect = self.image.get_rect(center=self.pos)
+        self.distance = 0
+        self.shape_type = random.randint(0, 4)
+        self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        self.event = random.randint(0, 10)
+        self.start = 0
+        enemyList.append(self)
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
 
     def setLayer(self): 
         self.name,self.health,self.speed,self.cashprize,self.exp_reward = self.layers[self.layer]
@@ -191,10 +253,10 @@ class Enemy:
             player.add_exp(self.exp_reward)
 
     def next_target(self):
-        # check if bloons reached the ending
-        if self.target<len(self.targets)-1: #index tọa đô
+        if self.target<len(self.targets)-1:
             self.target+=1
             t=self.targets[self.target]
+<<<<<<< HEAD
             self.angle = -((math.atan2(t[1]-self.pos[1],t[0]-self.pos[0]))/(math.pi/180)) # vì y bị ngược nên dấu trừ để lật lại hướng
 
             self.vx,self.vy = math.cos(math.radians(self.angle)),-math.sin(math.radians(self.angle)) #tính từ điểm bắt đầu
@@ -205,6 +267,32 @@ class Enemy:
             
         # end game / player if so (no health)
         else: self.kill(); player.health -= (self.layer+1) #index layer hiện tại +1
+=======
+            self.angle = -((math.atan2(t[1]-self.pos[1],t[0]-self.pos[0]))/(math.pi/180))
+            self.vx,self.vy = math.cos(math.radians(self.angle)),-math.sin(math.radians(self.angle))
+        else:
+            damage = self.layer + 1
+            player.health -= damage
+            player.score = max(0, player.score - 50)
+            font = pygame.font.Font(None, 36)
+            msg = font.render(f"-{damage}", True, (255, 0, 0))
+            msg_rect = msg.get_rect(center=(self.pos[0], self.pos[1] - 20))
+            screen = pygame.display.get_surface()
+            screen.blit(msg, msg_rect)
+            pygame.display.update(msg_rect)
+            try:
+                play_sound('sounds/life_lost.mp3', 0.3)
+            except:
+                print("Sound file not found")
+            flash = pygame.Surface((screenWidth, screenHeight))
+            flash.fill((255, 0, 0))
+            for alpha in range(0, 255, 51):
+                flash.set_alpha(255 - alpha)
+                screen.blit(flash, (0,0))
+                pygame.display.flip()
+                pygame.time.delay(5)
+            self.kill()
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
 
     def speedup(self):
         self.speed += 1
@@ -219,87 +307,64 @@ class Enemy:
     def kill(self):
         if self in enemyList:
             enemyList.remove(self)
-        # Add optional effects or sounds for smoother feedback
         print(f"Enemy {self.name} popped!")
         player.score += 100
+        player.money += self.cashprize
         player.add_exp(self.exp_reward)
+        # Lưu tiền sau khi giết quái
+        player.save_system.update_money(player.money)
         try:
             play_sound('sounds/pop3.mp3', 0.3)
         except:
             print("Không tìm thấy file âm thanh")
 
-    def move(self,frametime, ):
+    def move(self,frametime):
         speed = frametime*fps*self.speed
-
-        a,b = self.pos,self.targets[self.target] #list, tuple
+        a,b = self.pos,self.targets[self.target]
         c= a.copy()
         a[0] += self.vx*speed
-        #
         a[1] += self.vy*speed
-        
-        # if (b[0]-a[0])**2+(b[1]-a[1])**2<=speed**2: self.next_target()
         if (a[0]-c[0])**2 + (a[1]-c[1])**2 >(b[0]-c[0])**2 + (b[1]-c[1])**2: self.next_target()
         self.rect.center = self.pos
         self.distance+=speed
+
     def draw_health_bar(self, screen):
-        # Vẽ thanh máu trên đầu kẻ địch
         bar_width = self.rect.width
-        bar_height = 5  # Chiều cao thanh máu
-
-        # Tỷ lệ máu còn lại
+        bar_height = 5
         current_health_ratio = self.health / self.layers[self.layer][1]
-
-        # Vẽ thanh máu (viền đỏ)
         pygame.draw.rect(screen, (255, 0, 0), (self.rect.left, self.rect.top - bar_height, bar_width, bar_height))
-
-        # Vẽ thanh máu còn lại (xanh lá)
         pygame.draw.rect(screen, (0, 255, 0), (self.rect.left, self.rect.top - bar_height, bar_width * current_health_ratio, bar_height))
-
-        # Vẽ ký hiệu gạch
-        line_length = 16  # Tăng độ dài của gạch từ 13 lên 16
-        line_y = self.rect.top - bar_height - 10  # Vị trí y của gạch
+        line_length = 16
+        line_y = self.rect.top - bar_height - 10
         
         if self.shape_type == 0:
-            # Vẽ viền đen cho gạch ngang
             pygame.draw.line(screen, (0, 0, 0), 
                            (self.rect.centerx - line_length//2, line_y),
                            (self.rect.centerx + line_length//2, line_y), 5)
-            # Vẽ gạch ngang có màu 
             pygame.draw.line(screen, self.shape_color, 
                            (self.rect.centerx - line_length//2, line_y),
                            (self.rect.centerx + line_length//2, line_y), 3)
         elif self.shape_type == 1:
-            # Vẽ viền đen cho gạch dọc
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 4)
-            # Vẽ gạch dọc có màu
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 2)
         elif self.shape_type == 2:
-            # Vẽ viền đen cho gạch chéo xuống
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx + line_length//2, line_y + line_length//2), 5)
-            # Vẽ gạch chéo xuống có màu
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx + line_length//2, line_y + line_length//2), 3)
-        #elif self.shape_type == 3:
-            # Vẽ gạch chéo lên
-            #pygame.draw.line(screen, self.shape_color,
-                           #(self.rect.centerx - line_length//2, line_y + line_length//2),
-                           #(self.rect.centerx + line_length//2, line_y - line_length//2), 2)
         elif self.shape_type == 3:
-            # Vẽ viền đen cho chữ V
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 5)
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx + line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 5)
-            # Vẽ chữ V có màu
             pygame.draw.line(screen, self.shape_color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 3)
@@ -307,99 +372,10 @@ class Enemy:
                            (self.rect.centerx + line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 3)
         elif self.shape_type == 4:
-            # Vẽ viền đen cho hình tròn
             pygame.draw.circle(screen, (0, 0, 0),
                              (self.rect.centerx, line_y), line_length//1.5, 5)
-            # Vẽ hình tròn có màu
             pygame.draw.circle(screen, self.shape_color,
                              (self.rect.centerx, line_y), line_length//1.5, 3)
-
-class Tower:
-    def __init__(self,pos):
-        self.targetTimer = 0
-        self.rect = self.image.get_rect(center=pos)
-        self.level = 1
-        self.max_level = 3
-        towerList.append(self)
-
-    def upgrade(self):
-        if self.level < self.max_level:
-            self.level += 1
-            self.damage *= 1.5
-            self.range *= 1.2
-            self.firerate *= 1.2
-            self.cost = int(self.cost * 1.5)
-            print(f"Tháp đã được nâng cấp lên level {self.level}!")
-            try:
-                play_sound('sounds/new upgrade.mp3', 0.3)
-            except:
-                print("Không tìm thấy file âm thanh")
-
-    def takeTurn(self,frametime,screen):
-        self.startTargetTimer = self.firerate
-        self.targetTimer -= frametime
-        if self.targetTimer<=0:
-            enemypoint = self.target()
-            if enemypoint:
-                pygame.draw.line(screen,(255,255,255),self.rect.center,enemypoint)
-                self.targetTimer=self.startTargetTimer
-                try:
-                    play_sound('sounds/shoot.mp3', 0.2)
-                except:
-                    print("Không tìm thấy file âm thanh")
-    def target(self):
-        # for each enemy loop
-        for enemy in sorted(enemyList,key=lambda i: i.distance,reverse=True):
-            if (self.rect.centerx-enemy.rect.centerx)**2+(self.rect.centery-enemy.rect.centery)**2<=self.rangesq:
-                self.angle = int(get_angle(self.rect.center,enemy.rect.center))
-                print(self.angle)
-                self.image = pygame.transform.rotate(self.imagecopy,-self.angle)
-                self.rect = self.image.get_rect(center=self.rect.center)
-                enemy.hit(self.damage)
-                return enemy.rect.center
-
-class createTower(Tower):
-    # generate the tower
-    def __init__(self,tower,pos,info):
-        self.tower = tower
-        self.cost,self.firerate,self.range,self.damage = info
-        self.rangesq = self.range**2
-
-        # set properties (damage, firerate, range)
-        
-        self.image = TowerImageArray[tower]
-        self.imagecopy = self.image.copy()
-        self.angle = 0
-        Tower.__init__(self,pos)
-
-class Icon:
-    # adjust icons of the towers here
-    towers = { # Cost Fire speed Range Damage
-        'Dart Monkey'         : [ 215, 1.3, 100, 1],
-        # [ Cost, Fire speed , Range, Damage]
-        'Tack Shooter'        : [ 360, 1.0, 70, 1],
-        'Sniper Monkey'       : [ 430, 2.9, 300, 2],
-        'Boomerang Thrower'   : [ 430, 1.0, 90, 1],
-        'Ninja Monkey'        : [ 650, 1.0, 90, 1],
-        'Bomb Tower'          : [ 700, 1, 90, 2],
-        'Ice Tower'           : [ 410, 1.3, 90, 1],
-        'Glue Gunner'         : [ 325, 1.1, 100, 1],
-        'Monkey Buccaneer'    : [ 650, 0.99, 100, 1],
-        'Super Monkey'        : [ 3000, 0.15, 200, 1],
-        'Monkey Apprentice'   : [ 595, 1.0, 60, 1],
-        'Spike Factory'       : [ 650, 2.0, 40, 1],
-        'Road Spikes'         : [  30, 5.0, 40, 1],
-        'Exploding Pineapple' : [  25, 2.0, 60, 1],}
-
-    def __init__(self,tower):
-        # initalize tower and it's properties
-        self.tower = tower
-        self.cost,self.firerate,self.range,self.damage = self.towers[tower]
-        iconList.append(self)
-        self.img = pygame.transform.scale(TowerImageArray[tower],(41,41))
-        i = player.towers.index(tower); x,y = i%2,i//2
-        self.rect = self.img.get_rect(x=700+x*(41+6)+6,y=100+y*(41+6)+6)
-
 
 def dispText(screen,wavenum):
     font = pygame.font.SysFont('arial', 18)
@@ -416,68 +392,14 @@ def dispText(screen,wavenum):
         text = font.render(string,2,(0,0,0))
         screen.blit(text,text.get_rect(midleft=pos))
 
-# https://realpython.com/lessons/using-blit-and-flip/
-
-# Block Transfer, and .blit() is how you copy the contents of one Surface to another
-def drawTower(screen,tower,selected):
-    screen.blit(tower.image,tower.rect)
-    if tower == selected:
-        rn = tower.range
-        surface = pygame.Surface((2*rn,2*rn)).convert_alpha(); surface.fill((0,0,0,0))
-        pygame.draw.circle(surface,(0,255,0,85),(rn,rn),rn)
-        screen.blit(surface,tower.rect.move((-1*rn,-1*rn)).center)
-
-    elif tower.rect.collidepoint(pygame.mouse.get_pos()):
-        rn = tower.range
-        surface = pygame.Surface((2*rn,2*rn)).convert_alpha(); surface.fill((0,0,0,0))
-        pygame.draw.circle(surface,(255,255,255,85),(rn,rn),rn)
-        screen.blit(surface,tower.rect.move((-1*rn,-1*rn)).center)
-
-def selectedIcon(screen,selected):
-
-    mpos = pygame.mouse.get_pos()
-    # using active mouse position
-    image = TowerImageArray[selected.tower]
-    rect = image.get_rect(center=mpos)
-    screen.blit(image,rect)
-
-    collide = False
-    rn = selected.range
-    surface = pygame.Surface((2*rn,2*rn)).convert_alpha(); surface.fill((0,0,0,0))
-    pygame.draw.circle(surface,(255,0,0,75) if collide else (0,0,255,75),(rn,rn),rn)
-    screen.blit(surface,surface.get_rect(center=mpos))
-
-def selectedTower(screen,selected,mousepos):
-#testing
-    selected.genButtons(screen)
-
-    for img,rect,info,infopos,cb in selected.buttonlist:
-        screen.blit(img,rect)
-        if rect.collidepoint(mousepos): screen.blit(info,infopos)
-
-def drawIcon(screen,icon,mpos,font):
-    screen.blit(icon.img,icon.rect)
-
-    if icon.rect.collidepoint(mpos):
-        text = font.render("%s Tower (%d)" % (icon.tower,icon.cost),2,(0,0,0))
-        textpos = text.get_rect(right=700-6,centery=icon.rect.centery)
-        screen.blit(text,textpos)
-
-class Sender:
-    def __init__(self,wave):
-        self.wave = wave; self.timer = 0; self.rate = 1
-        self.enemies = []; enemies = mapvar.waves[wave-1].split(',')
-        for enemy in enemies:
-            amount,layer = enemy.split('*')
-            self.enemies += [eval(layer)-1]*eval(amount)
-        senderList.append(self)
-
-    def update(self,frametime,wave):
-        if not self.enemies:
-            if not enemyList: senderList.remove(self); wave+=1; player.money+=99+self.wave
-        elif self.timer > 0: self.timer -= frametime
-        else: self.timer = self.rate; Enemy(self.enemies[0]); del self.enemies[0]
-        return wave
+def buy_hail():
+    hail_cost = 100  # Chi phí để mua một thiên thạch
+    if player.money >= hail_cost:
+        player.money -= hail_cost
+        player.save_system.update_money(player.money)  # Lưu tiền sau khi mua
+        spawn_hail()
+        return True
+    return False
 
 def workEvents(selected, wave, speed, pos, drawing, spawn):
     for event in pygame.event.get():
@@ -505,23 +427,34 @@ def workEvents(selected, wave, speed, pos, drawing, spawn):
             if event.key == pygame.K_SPACE and not enemyList:
                 if wave<=len(mapvar.waves): Sender(wave)
                 else: print('Congratulations!! You survived the swarm')
-
-            if event.key == pygame.K_k and selected in towerList: player.money+=int(selected.cost*0.9); towerList.remove(selected); selected = None
             if event.key == pygame.K_w and speed<10: speed+=1
             if event.key == pygame.K_s and speed>1: speed-=1
-            
-               
+            if event.key == pygame.K_h:  # Thêm phím tắt H để mua thiên thạch
+                if buy_hail():
+                    print("Da mua thien thach thanh cong!")
+                    try:
+                        play_sound('sounds/buy.mp3', 0.3)
+                    except:
+                        print("Khong tim thay file am thanh")
+                else:
+                    print("Khong du tien de mua thien thach!")
         if event.type == SPAWN_HAIL:
             spawn_hail()
 
     return selected,wave,speed, pos, drawing
+
 def spawn_hail():
         pos = pygame.mouse.get_pos()
         hail = Hail(pos[0], pos[1])
         hailList.append(hail)
 
-SPAWN_HAIL= pygame.USEREVENT + 1
+        # Phát âm thanh khi hỏa cầu xuất hiện
+        try:
+            play_sound('sounds/Fire.wav', 1 )
+        except:
+            print("Không tìm thấy file âm thanh ")
 
+SPAWN_HAIL= pygame.USEREVENT + 1
 
 def detect(surface_temp):
     img = pygame.surfarray.array3d(surface_temp)
@@ -568,7 +501,6 @@ def detect(surface_temp):
                 if len(hull) >= 5:
                     hull_area = cv2.contourArea(hull)
                     contour_area = cv2.contourArea(contour)
-                    # Refine the v_shape detection to avoid conflicts with diagonal_left
                     if contour_area / hull_area < 0.75 and w > h * 0.8 and h > w * 0.8:
                         return "v_shape"
             if len(approx) > 8 and (contour_area / circle_area) > 0.5 and (4 * math.pi * contour_area) / (cv2.arcLength(contour, True) ** 2) > 0.5:
@@ -579,7 +511,7 @@ def detect(surface_temp):
 def event_enemy(screen):
     for enemy in enemyList[:]:
         if enemy.event == 1 and enemy.pos[0] > 0:
-            if enemy.start == 0:  # Chỉ gán start nếu chưa có giá trị
+            if enemy.start == 0:
                 enemy.start = pygame.time.get_ticks()
 
             current= pygame.time.get_ticks()
@@ -614,6 +546,13 @@ class Explosion:
         self.start_time = pygame.time.get_ticks()
         self.img= None
         self.duration = 300  
+        
+        # Phát âm thanh nổ khi tạo explosion
+        try:
+            play_sound('sounds/explosion.wav', 0.4 )
+        except:
+            print("Không tìm thấy file âm thanh explosion ")
+
 
     def draw(self, screen):
         boom1 = pygame.image.load("images/boom1.png").convert_alpha()
@@ -652,38 +591,32 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
         contour_rect = cv2.boundingRect(contour)
 
         for enemy in enemyList[:]:
-            # if enemy.rect.colliderect(contour_rect):
                 rdm = random.randint(1, 2)
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
-                    # enemy.kill()
                     if rdm==1:
                         enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
-                    # enemy.kill()
                     if rdm==1:
                         enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
-                    # enemy.kill()
                     if rdm==1:
                         enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 3 and drawn_shape == "v_shape":
-                    # enemy.kill()
                     if rdm==1:
                         enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 4 and drawn_shape == "circle":
-                    # enemy.kill()
                     rdm = random.randint(1, 3)
                     if rdm==1:
                         enemy.speedup()
@@ -693,13 +626,15 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
 
 class Hail:
     def __init__(self, x, y):
-        self.x, self.y = random.choice([(0, random.randint(-10, screenHeight/10)), (random.randint(-10, screenWidth), 0)])
+        self.x, self.y = random.choice([
+            (0, random.randint(-10, int(screenHeight/10))), 
+            (random.randint(-10, screenWidth), 0)
+        ])
         self.target= (x, y)
         self.speed = 10
         self.image = pygame.image.load("images/meteor1.png").convert_alpha()
         self.rect= self.image.get_rect(center=(self.x, self.y))
         self.angle = None
-
 
     def draw(self, screen):
         img= random.randint(1, 3)
@@ -738,46 +673,15 @@ class Hail:
 
         self.rect.center = (self.x, self.y)
 
-    # def hit_target(self):
-    #     print("hail", self.x, self.y)
-    #     print("enemy", self.target.rect.centerx, self.target.rect.centery)
-    #     if self.rect.colliderect(self.target.rect):
-    #         print ("Hail hit the target!")
-    #         return True
-    #     return False
-    
-
-    # def move(self): 
-    #     if self.target:
-    #         enemy_vx = self.target.vx
-    #         enemy_vy = self.target.vy
-    #         dx = self.target.targets[self.target.target][0] - self.x
-    #         dy = self.target.targets[self.target.target][1] - self.y
-    #         distance = math.sqrt(dx ** 2 + dy ** 2)
-
-    #         t = distance / self.speed
-
-    #         future_x = self.target.rect.centerx + enemy_vx * t
-    #         future_y = self.target.rect.centery + enemy_vy * t
-
-    #         dx_future = future_x - self.x
-    #         dy_future = future_y - self.y
-    #         distance_future = math.sqrt(dx_future ** 2 + dy_future ** 2)
-
-    #         if distance_future > 0:
-    #             self.x += dx_future / distance_future * self.speed
-    #             self.y += dy_future / distance_future * self.speed
-
-    #         self.rect.center = (self.x, self.y)
-
 class Menu:
     def __init__(self):
         self.font_big = pygame.font.Font(None, 74)
         self.font_small = pygame.font.Font(None, 36)
         self.buttons = [
-            {'text': 'CHƠI GAME', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'HƯỚNG DẪN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'THOÁT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
+            {'text': 'START', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'SHOP', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'HUONG DAN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'ESC', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
         ]
         self.game_title = self.font_big.render('TOWER DEFENSE', True, (255, 215, 0))
         self.title_rect = self.game_title.get_rect(center=(screenWidth // 2, 100))
@@ -793,6 +697,13 @@ class Menu:
     def draw(self, screen, mouse_pos):
         screen.fill((0, 0, 0))
         screen.blit(self.game_title, self.title_rect)
+        
+        # Vẽ số tiền hiện tại
+        money_font = pygame.font.Font(None, 36)
+        money_text = money_font.render(f"Tiền: {player.money}", True, (255, 215, 0))
+        money_rect = money_text.get_rect(center=(screenWidth // 2, 200))
+        screen.blit(money_text, money_rect)
+        
         for button in self.buttons:
             color = button['hover_color'] if button['rect'].collidepoint(mouse_pos) else button['color']
             text_surface = self.font_small.render(button['text'], True, color)
@@ -808,15 +719,16 @@ def show_instructions(screen):
     running = True
     font = pygame.font.Font(None, 36)
     instructions = [
-        "HƯỚNG DẪN CHƠI:",
-        "- Đặt các tháp để bảo vệ đường đi",
-        "- Tiêu diệt kẻ địch để nhận tiền",
-        "- Bảo vệ căn cứ không để kẻ địch đi qua",
-        "- Nhấn SPACE để bắt đầu wave quái",
-        "- Vẽ hình tương ứng với ký hiệu trên quái để tiêu diệt",
+        "HUONG DAN CHOI:",
+        "- Dat cac thap de bao ve duong di",
+        "- Tieu diet ke dich de nhan tien",
+        "- Bao ve can cu khong de ke dich di qua",
+        "- Nhan SPACE de bat dau wave quai",
+        "- Ve hinh tuong ung voi ky hieu tren quai de tieu diet",
         "",
-        "Nhấn ESC để quay lại"
+        "Nhan ESC de quay lai"
     ]
+
     
     while running:
         for event in pygame.event.get():
@@ -837,9 +749,66 @@ def play_sound(file, volume=0.5):
     sound = pygame.mixer.Sound(file)
     sound.set_volume(volume)
     sound.play()
- 
-#hhw
-# main file
+
+class Sender:
+    def __init__(self,wave):
+        self.wave = wave
+        self.timer = 0 
+        self.rate = 1
+        self.enemies = []
+        enemies = mapvar.waves[wave-1].split(',')
+        for enemy in enemies:
+            amount,layer = enemy.split('*')
+            self.enemies += [eval(layer)-1]*eval(amount)
+        senderList.append(self)
+
+    def update(self,frametime,wave):
+        if not self.enemies:
+            if not enemyList: 
+                senderList.remove(self)
+                wave+=1
+                player.money+=99+self.wave
+        elif self.timer > 0: 
+            self.timer -= frametime
+        else: 
+            self.timer = self.rate
+            Enemy(self.enemies[0])
+            del self.enemies[0]
+        return wave
+
+class GameOver:
+    def __init__(self):
+        self.font_big = pygame.font.Font(None, 74)
+        self.font_small = pygame.font.Font(None, 36)
+        self.game_over_text = self.font_big.render('GAME OVER', True, (255, 0, 0))
+        self.title_rect = self.game_over_text.get_rect(center=(screenWidth // 2, 200))
+        
+        self.menu_button = {
+            'text': 'QUAY LAI MENU',
+            'color': (255, 255, 255),
+            'hover_color': (0, 255, 0),
+            'rect': None
+        }
+        self.initialize_button()
+
+    def initialize_button(self):
+        text_surface = self.font_small.render(self.menu_button['text'], True, self.menu_button['color'])
+        text_rect = text_surface.get_rect(center=(screenWidth // 2, 300))
+        self.menu_button['rect'] = text_rect
+
+    def draw(self, screen, mouse_pos):
+        screen.fill((0, 0, 0))
+        screen.blit(self.game_over_text, self.title_rect)
+        
+        color = self.menu_button['hover_color'] if self.menu_button['rect'].collidepoint(mouse_pos) else self.menu_button['color']
+        text_surface = self.font_small.render(self.menu_button['text'], True, color)
+        screen.blit(text_surface, self.menu_button['rect'])
+
+    def handle_click(self, mouse_pos):
+        if self.menu_button['rect'].collidepoint(mouse_pos):
+            return True
+        return False
+
 def main():
     pygame.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -848,6 +817,17 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
 
+    # Khởi tạo các hệ thống
+    achievement_system = AchievementSystem()
+    shop_system = ShopSystem()
+    
+    # Khởi tạo player sau khi pygame đã được khởi tạo
+    global player
+    player = Player()
+    
+    # Add this line to load enemy images
+    loadImages()
+    
     mapvar.getmovelist()
 
     pygame.time.set_timer(SPAWN_HAIL, 3000)
@@ -855,9 +835,9 @@ def main():
     pos=[]
     spawn= True
 
-    # Khởi tạo menu
     menu = Menu()
-    game_state = "menu"  # Có thể là "menu", "game", "instructions"
+    game_over = GameOver()
+    game_state = "menu"
 
     background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
     heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
@@ -869,8 +849,7 @@ def main():
     background.blit(heart,(screenWidth-w+6,h+h//2-heart.get_height()//2))
     
     level_img,t1,t2 = mapvar.get_background()
-    loadImages()
-    # for tower in player.towers: Icon(tower)
+
     selected = None
     speed = 3
     wave = 1
@@ -884,15 +863,53 @@ def main():
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     button_clicked = menu.handle_click(event.pos)
-                    if button_clicked == 0:  # CHƠI GAME
+                    if button_clicked == 0:
                         game_state = "game"
-                    elif button_clicked == 1:  # HƯỚNG DẪN
+                    elif button_clicked == 1:
+                        # Cập nhật tiền trước khi vào shop
+                        player.money = player.save_system.get_money()
+                        game_state = "shop"
+                    elif button_clicked == 2:
                         game_state = "instructions"
-                    elif button_clicked == 2:  # THOÁT
+                    elif button_clicked == 3:
                         pygame.quit()
                         sys.exit()
 
             menu.draw(screen, pygame.mouse.get_pos())
+            pygame.display.flip()
+            clock.tick(fps)
+
+        elif game_state == "shop":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        game_state = "menu"
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    y_offset = 200
+                    for item_id, item in shop_system.items.items():
+                        item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
+                        buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
+                        
+                        if buy_rect.collidepoint(mouse_pos):
+                            if player.money >= item['cost']:
+                                if shop_system.buy_item(item_id, player):
+                                    try:
+                                        play_sound('sounds/buy.mp3', 0.3)
+                                    except:
+                                        print("Khong tim thay file am thanh")
+                                    print(f"Da mua {item['name']}")
+                                    # Cập nhật lại tiền sau khi mua
+                                    player.money = player.save_system.get_money()
+                            else:
+                                print("Khong du tien de mua!")
+                        y_offset += 100
+
+            screen.fill((0, 0, 0))
+            shop_system.draw_shop(screen)
             pygame.display.flip()
             clock.tick(fps)
 
@@ -903,10 +920,24 @@ def main():
             starttime = time.time()
             clock.tick(fps)
             frametime = (time.time()-starttime)*speed
+            
+            # Kiểm tra health = 0
+            if player.health <= 0:
+                game_state = "game_over"
+                continue
+                
             screen.blit(level_img,(0,0))
             mpos = pygame.mouse.get_pos()
 
-            if senderList: wave = senderList[0].update(frametime,wave)
+            if senderList: 
+                wave = senderList[0].update(frametime,wave)
+                player.wave = wave  # Cập nhật wave cho player
+
+            # Kiểm tra thành tích
+            achievement_system.check_achievements(player)
+
+            # Cập nhật tiền
+            player.update_money(player.money)
 
             z0,z1 = [],[]
             for enemy in enemyList:
@@ -923,12 +954,12 @@ def main():
                 enemy.draw_health_bar(screen)
                 screen.blit(t1,(0,0))
                 screen.blit(t2,(0,0))
-            for enemy in z1: enemy.move(frametime); screen.blit(enemy.image,enemy.rect); enemy.draw_health_bar(screen)
-
-            for tower in towerList: tower.takeTurn(frametime,screen); drawTower(screen,tower,selected)
+            for enemy in z1: 
+                enemy.move(frametime)
+                screen.blit(enemy.image,enemy.rect)
+                enemy.draw_health_bar(screen)
 
             screen.blit(background,(0,0))
-            for icon in iconList: drawIcon(screen,icon,mpos,font)
             selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing, spawn)
             surface_temp= pygame.Surface((800,600)).convert_alpha()
             surface_temp.fill((0,0,0,0))
@@ -969,9 +1000,13 @@ def main():
                     enemy.move(frametime)
                 pygame.display.flip()
 
+            # Vẽ thông báo thành tích
+            achievement_system.draw_notifications(screen)
             
+            # Vẽ tiến độ thành tích
+            achievement_system.draw_progress(screen)
+
             for hail in hailList[:]:
-                
                 hail.move(screen)
                 hail.draw(screen)
                 
@@ -987,9 +1022,39 @@ def main():
                 if explosion.is_done():
                     explosionList.remove(explosion)
                         
-                
             pygame.display.flip()
 
+        elif game_state == "game_over":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if game_over.handle_click(event.pos):
+                        # Reset game state
+                        player.health = shop_system.get_total_health()
+                        player.money = player.save_system.get_money()
+                        player.score = 0
+                        player.level = 1
+                        player.exp = 0
+                        player.exp_to_next_level = 1000
+                        enemyList.clear()
+                        bulletList.clear()
+                        iconList.clear()
+                        senderList.clear()
+                        startList.clear()
+                        hailList.clear()
+                        explosionList.clear()
+                        game_state = "menu"
+
+            game_over.draw(screen, pygame.mouse.get_pos())
+            pygame.display.flip()
+            clock.tick(fps)
+
 if __name__ == '__main__':
+<<<<<<< HEAD
     main()
 #'20*1','30*1',
+=======
+     main()
+>>>>>>> 355e9d5d1480705be04de1d971297cea0d1e1a7c
