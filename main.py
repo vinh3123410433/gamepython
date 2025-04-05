@@ -112,14 +112,14 @@ mapvar = Map()
 
 class Enemy:
     layers = [ # Name Health Speed CashReward ExpReward
-        ('red',      1, 1.0, 0, 10),
-        ('darkblue', 1, 1.0, 0, 15),
-        ('green',    1, 1.2, 0, 20),
-        ('yellow',   1, 2.0, 0, 25),
-        ('purple',   2, 1.5, 0, 30),
-        ('brown',    2, 1.8, 0, 35),
-        ('magenta',  3, 1.3, 0, 40),
-        ('aqua',     3, 1.6, 0, 45),]
+        ('red',      1, 5.0, 0, 10),
+        ('darkblue', 1, 5.0, 0, 15),
+        ('green',    1, 5.2, 0, 20),
+        ('yellow',   1, 6.0, 0, 25),
+        ('purple',   2, 5.5, 0, 30),
+        ('brown',    2, 5.8, 0, 35),
+        ('magenta',  3, 5.3, 0, 40),
+        ('aqua',     3, 5.6, 0, 45),]
 
     def __init__(self,layer):
         self.layer = layer
