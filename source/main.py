@@ -12,6 +12,7 @@ from achievements import AchievementSystem  # Thêm import
 from features import ShopSystem
 from save_system import SaveSystem
 from hail import Hail
+from sound_button import SoundButton  # Thêm import
 
 player = Player()
 mapvar = Map()
@@ -42,12 +43,16 @@ def dispText(screen,wavenum):
         text = font.render(string,2,(0,0,0))
         screen.blit(text,text.get_rect(midleft=pos))
 
-def workEvents(selected, wave, speed, pos, drawing):
+def workEvents(selected, wave, speed, pos, drawing, sound_button):
     buy= False
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
         if event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            # Kiểm tra click vào nút âm thanh
+            if sound_button.handle_click(pygame.mouse.get_pos()):
+                return selected, wave, speed, pos, drawing
+                
             drawing = True
             pos= [pygame.mouse.get_pos()]
         if event.type == pygame.MOUSEMOTION and drawing == True:
@@ -286,6 +291,9 @@ def main():
     achievement_system = AchievementSystem()
     shop_system = ShopSystem()
     
+    # Khởi tạo nút âm thanh - đặt ở góc trái trên
+    sound_button = SoundButton(10, 10, 140, 40)
+    
     # Khởi tạo player sau khi pygame đã được khởi tạo
     global player
     player = Player()
@@ -425,7 +433,7 @@ def main():
                 enemy.draw_health_bar(screen)
 
             screen.blit(background,(0,0))
-            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
+            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing, sound_button)
             surface_temp= pygame.Surface((800,600)).convert_alpha()
             surface_temp.fill((0,0,0,0))
             if (len(pos)>1):
@@ -435,6 +443,10 @@ def main():
                     pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
                     screen.blit(guide_surface, (0, 0))
             dispText(screen,wave)
+            
+            # Vẽ nút âm thanh
+            sound_button.draw(screen, pygame.mouse.get_pos())
+            
             if len(pos) > 10:
                 shape_detected = detect(surface_temp)
                 if shape_detected:
