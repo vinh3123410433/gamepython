@@ -353,8 +353,6 @@ def main():
                                     except:
                                         print("Khong tim thay file am thanh")
                                     print(f"Da mua {item['name']}")
-                                    # Cập nhật lại tiền sau khi mua
-                                    player.money = player.save_system.get_money()
                             else:
                                 print("Khong du tien de mua!")
                         y_offset += 100
