@@ -1,0 +1,142 @@
+import pygame, random, math
+from map import Map
+from player import Player
+from setting import fps, screenWidth, screenHeight, enemyList, EnemyImageArray,play_sound
+
+mapvar = Map()
+player= Player()
+
+
+class Enemy:
+    layers = [ # Name Health Speed CashReward ExpReward
+        ('red',      1, 5.0, 0, 10),
+        ('darkblue', 1, 5.0, 0, 15),
+        ('green',    1, 5.2, 0, 20),
+        ('yellow',   1, 6.0, 0, 25),
+        ('purple',   2, 5.5, 0, 30),
+        ('brown',    2, 5.8, 0, 35),
+        ('magenta',  3, 5.3, 0, 40),
+        ('aqua',     3, 5.6, 0, 45),]
+
+    def __init__(self,layer, player, mapvar):
+        self.layer = layer
+        self.setLayer()
+        self.targets = mapvar.targets
+        self.pos = list(self.targets[0])
+        self.target = 0
+        self.next_target()
+        self.rect = self.image.get_rect(center=self.pos)
+        self.distance = 0
+        self.shape_type = random.randint(0, 4)
+        self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        self.event = random.randint(0, 10)
+        self.start = 0
+        enemyList.append(self)
+
+    def setLayer(self): 
+        self.name,self.health,self.speed,self.cashprize,self.exp_reward = self.layers[self.layer]
+        self.image = EnemyImageArray[self.name]
+
+    def nextLayer(self): 
+        old = self.shape_type
+        valid_numbers = [n for n in range(0, 3) if n !=old]
+        new = random.choice(valid_numbers)
+        self.shape_type= new
+        self.event= random.randint(0, 5)
+        self.layer-=1; 
+        if self.layer== -1: 
+            self.kill()
+        else :
+            self.setLayer()
+            player.add_exp(self.exp_reward)
+
+    def next_target(self):
+            self.target+=1
+            t=self.targets[self.target]
+            self.angle = -((math.atan2(t[1]-self.pos[1],t[0]-self.pos[0]))/(math.pi/180))
+            self.vx,self.vy = math.cos(math.radians(self.angle)),-math.sin(math.radians(self.angle))
+
+    def speedup(self):
+        self.speed += 1
+
+    def hit(self,damage):
+        player.money+=1
+        self.health -= damage
+        if self.health<=0:
+            player.money+=self.cashprize
+            self.nextLayer() if self.layer>0 else self.kill()
+
+    def kill(self):
+        if self in enemyList:
+            enemyList.remove(self)
+        print(f"Enemy {self.name} popped!")
+        player.score += 100
+        player.add_exp(self.exp_reward)
+        try:
+            play_sound('sounds/pop3.mp3', 0.3)
+        except:
+            print("Không tìm thấy file âm thanh")
+
+    def move(self,frametime):
+        speed = frametime*fps*self.speed
+        a,b = self.pos,self.targets[self.target]
+        c= a.copy()
+        a[0] += self.vx*speed
+        a[1] += self.vy*speed
+        if (a[0]-c[0])**2 + (a[1]-c[1])**2 >(b[0]-c[0])**2 + (b[1]-c[1])**2: self.next_target()
+        self.rect.center = self.pos
+        self.distance+=speed
+        if self.target >= len(self.targets)-1:
+            damage = self.layer + 1
+            player.health -= damage
+            player.score = max(0, player.score - 50)
+            self.kill()
+
+    def draw_health_bar(self, screen):
+        bar_width = self.rect.width
+        bar_height = 5
+        current_health_ratio = self.health / self.layers[self.layer][1]
+        pygame.draw.rect(screen, (255, 0, 0), (self.rect.left, self.rect.top - bar_height, bar_width, bar_height))
+        pygame.draw.rect(screen, (0, 255, 0), (self.rect.left, self.rect.top - bar_height, bar_width * current_health_ratio, bar_height))
+        line_length = 16
+        line_y = self.rect.top - bar_height - 10
+        
+        if self.shape_type == 0:
+            pygame.draw.line(screen, (0, 0, 0), 
+                           (self.rect.centerx - line_length//2, line_y),
+                           (self.rect.centerx + line_length//2, line_y), 5)
+            pygame.draw.line(screen, self.shape_color, 
+                           (self.rect.centerx - line_length//2, line_y),
+                           (self.rect.centerx + line_length//2, line_y), 3)
+        elif self.shape_type == 1:
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 4)
+            pygame.draw.line(screen, self.shape_color,
+                           (self.rect.centerx, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 2)
+        elif self.shape_type == 2:
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx - line_length//2, line_y - line_length//2),
+                           (self.rect.centerx + line_length//2, line_y + line_length//2), 5)
+            pygame.draw.line(screen, self.shape_color,
+                           (self.rect.centerx - line_length//2, line_y - line_length//2),
+                           (self.rect.centerx + line_length//2, line_y + line_length//2), 3)
+        elif self.shape_type == 3:
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx - line_length//2, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 5)
+            pygame.draw.line(screen, (0, 0, 0),
+                           (self.rect.centerx + line_length//2, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 5)
+            pygame.draw.line(screen, self.shape_color,
+                           (self.rect.centerx - line_length//2, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 3)
+            pygame.draw.line(screen, self.shape_color,
+                           (self.rect.centerx + line_length//2, line_y - line_length//2),
+                           (self.rect.centerx, line_y + line_length//2), 3)
+        elif self.shape_type == 4:
+            pygame.draw.circle(screen, (0, 0, 0),
+                             (self.rect.centerx, line_y), line_length//1.5, 5)
+            pygame.draw.circle(screen, self.shape_color,
+                             (self.rect.centerx, line_y), line_length//1.5, 3)
