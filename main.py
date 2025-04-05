@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pygame, sys, os, time, math, random, cv2, numpy
+from achievements import AchievementSystem  # Thêm import
 
 pos=[]
 
@@ -52,6 +53,7 @@ class Player:
         self.level = 1
         self.exp = 0
         self.exp_to_next_level = 1000
+        self.wave = 1  # Thêm thuộc tính wave
 
     def add_exp(self, amount):
         self.exp += amount
@@ -277,6 +279,14 @@ def dispText(screen,wavenum):
         text = font.render(string,2,(0,0,0))
         screen.blit(text,text.get_rect(midleft=pos))
 
+def buy_hail():
+    hail_cost = 100  # Chi phí để mua một thiên thạch
+    if player.money >= hail_cost:
+        player.money -= hail_cost
+        spawn_hail()
+        return True
+    return False
+
 def workEvents(selected, wave, speed, pos, drawing, spawn):
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
@@ -305,6 +315,11 @@ def workEvents(selected, wave, speed, pos, drawing, spawn):
                 else: print('Congratulations!! You survived the swarm')
             if event.key == pygame.K_w and speed<10: speed+=1
             if event.key == pygame.K_s and speed>1: speed-=1
+            if event.key == pygame.K_h:  # Thêm phím tắt H để mua thiên thạch
+                if buy_hail():
+                    print("Đã mua thiên thạch thành công!")
+                else:
+                    print("Không đủ tiền để mua thiên thạch!")
         if event.type == SPAWN_HAIL:
             spawn_hail()
 
@@ -663,6 +678,9 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
 
+    # Thêm hệ thống thành tích
+    achievement_system = AchievementSystem()
+    
     # Add this line to load enemy images
     loadImages()
     
@@ -729,7 +747,12 @@ def main():
             screen.blit(level_img,(0,0))
             mpos = pygame.mouse.get_pos()
 
-            if senderList: wave = senderList[0].update(frametime,wave)
+            if senderList: 
+                wave = senderList[0].update(frametime,wave)
+                player.wave = wave  # Cập nhật wave cho player
+
+            # Kiểm tra thành tích
+            achievement_system.check_achievements(player)
 
             z0,z1 = [],[]
             for enemy in enemyList:
@@ -791,6 +814,12 @@ def main():
                 for enemy in enemyList[:]:
                     enemy.move(frametime)
                 pygame.display.flip()
+
+            # Vẽ thông báo thành tích
+            achievement_system.draw_notifications(screen)
+            
+            # Vẽ tiến độ thành tích
+            achievement_system.draw_progress(screen)
 
             for hail in hailList[:]:
                 hail.move(screen)
