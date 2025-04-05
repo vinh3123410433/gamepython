@@ -455,8 +455,7 @@ def main():
                 screen.blit(cloud_image, (0, 0))
                 for enemy in enemyList[:]:
                     enemy.move(frametime)
-                pygame.display.flip()
-
+                    
             # Vẽ thông báo thành tích
             achievement_system.draw_notifications(screen)
             
@@ -484,7 +483,7 @@ def main():
                 if hail.x != 0 and hail.y != 0:
                     for enemy in enemyList[:]:
                         if enemy.rect.colliderect(hail.rect):
-                            enemy.kill()
+                            enemy.nextLayer()
                             if (hail in hailList): 
                                 hailList.remove(hail)
                                 explosionList.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
