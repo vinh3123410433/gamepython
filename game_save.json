@@ -1,0 +1,43 @@
+{
+    "money": 200,
+    "achievements": {
+        "kill_100": {
+            "name": "SAT THU",
+            "desc": "Tieu diet 100 quai",
+            "unlocked": false
+        },
+        "survive_10": {
+            "name": "KIEN NGHI",
+            "desc": "Song sot 10 wave",
+            "unlocked": false
+        },
+        "level_10": {
+            "name": "HUYEN THOAI",
+            "desc": "Dat level 10",
+            "unlocked": false
+        },
+        "money_1000": {
+            "name": "TY PHU",
+            "desc": "Co 1000 tien",
+            "unlocked": false
+        }
+    },
+    "shop_items": {
+        "health_1": {
+            "name": "Tang 1 Mau",
+            "cost": 100,
+            "bought": 0
+        },
+        "health_2": {
+            "name": "Tang 2 Mau",
+            "cost": 250,
+            "bought": 0
+        },
+        "health_3": {
+            "name": "Tang 3 Mau",
+            "cost": 500,
+            "bought": 0
+        }
+    },
+    "last_save": "2025-04-05T17:24:41.553801"
+}

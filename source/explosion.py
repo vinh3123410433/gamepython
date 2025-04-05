@@ -1,4 +1,5 @@
 import pygame
+from setting import play_sound
 
 class Explosion:
     def __init__(self, x, y):
@@ -7,6 +8,10 @@ class Explosion:
         self.start_time = pygame.time.get_ticks()
         self.img= None
         self.duration = 300  
+        try:
+            play_sound('sounds/explosion.wav', 0.4 )
+        except:
+            print("Không tìm thấy file âm thanh explosion ")
 
     def draw(self, screen):
         boom1 = pygame.image.load("images/boom1.png").convert_alpha()

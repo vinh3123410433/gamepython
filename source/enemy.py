@@ -3,9 +3,6 @@ from map import Map
 from player import Player
 from setting import fps, screenWidth, screenHeight, enemyList, EnemyImageArray,play_sound
 
-mapvar = Map()
-player= Player()
-
 
 class Enemy:
     layers = [ # Name Health Speed CashReward ExpReward
@@ -18,7 +15,9 @@ class Enemy:
         ('magenta',  3, 5.3, 0, 40),
         ('aqua',     3, 5.6, 0, 45),]
 
-    def __init__(self,layer, player, mapvar):
+    def __init__(self,layer, mapvar, player):
+        self.player = player
+        self.mapvar = mapvar
         self.layer = layer
         self.setLayer()
         self.targets = mapvar.targets
@@ -29,7 +28,7 @@ class Enemy:
         self.distance = 0
         self.shape_type = random.randint(0, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        self.event = random.randint(0, 10)
+        self.event = 2
         self.start = 0
         enemyList.append(self)
 
@@ -48,30 +47,40 @@ class Enemy:
             self.kill()
         else :
             self.setLayer()
-            player.add_exp(self.exp_reward)
+            self.player.add_exp(self.exp_reward)
 
     def next_target(self):
+        if self.target < len(self.targets) - 1:
             self.target+=1
             t=self.targets[self.target]
             self.angle = -((math.atan2(t[1]-self.pos[1],t[0]-self.pos[0]))/(math.pi/180))
             self.vx,self.vy = math.cos(math.radians(self.angle)),-math.sin(math.radians(self.angle))
+        else:
+            damage = self.layer + 1
+            self.player.health -= damage
+            print(f"Player bị mất {damage} máu!")
+            self.player.score = max(0, self.player.score - 50)
+            self.kill()
 
     def speedup(self):
         self.speed += 1
 
     def hit(self,damage):
-        player.money+=1
+        self.player.money+=1
         self.health -= damage
         if self.health<=0:
-            player.money+=self.cashprize
+            self.player.money+=self.cashprize
             self.nextLayer() if self.layer>0 else self.kill()
 
     def kill(self):
         if self in enemyList:
             enemyList.remove(self)
         print(f"Enemy {self.name} popped!")
-        player.score += 100
-        player.add_exp(self.exp_reward)
+        self.player.score += 100
+        self.player.money += self.cashprize
+        self.player.add_exp(self.exp_reward)
+        # Lưu tiền sau khi giết quái
+        self.player.save_system.update_money(self.player.money)
         try:
             play_sound('sounds/pop3.mp3', 0.3)
         except:
@@ -86,11 +95,8 @@ class Enemy:
         if (a[0]-c[0])**2 + (a[1]-c[1])**2 >(b[0]-c[0])**2 + (b[1]-c[1])**2: self.next_target()
         self.rect.center = self.pos
         self.distance+=speed
-        if self.target >= len(self.targets)-1:
-            damage = self.layer + 1
-            player.health -= damage
-            player.score = max(0, player.score - 50)
-            self.kill()
+        print("target", self.target, "len", len(self.targets))
+        
 
     def draw_health_bar(self, screen):
         bar_width = self.rect.width

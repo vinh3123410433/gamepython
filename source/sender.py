@@ -26,6 +26,6 @@ class Sender:
             self.timer -= frametime
         else: 
             self.timer = self.rate
-            Enemy(self.enemies[0], self.player, self.mapvar)
+            Enemy(self.enemies[0],self.mapvar, self.player)
             del self.enemies[0]
         return wave

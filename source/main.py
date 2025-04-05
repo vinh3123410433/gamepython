@@ -8,13 +8,24 @@ from sender import Sender
 from menu import Menu
 from gameover import GameOver
 from explosion import Explosion
+from achievements import AchievementSystem  # Thêm import
+from features import ShopSystem
+from save_system import SaveSystem
+from hail import Hail
 
 player = Player()
 mapvar = Map()
 # store images using a dictionary 
 EnemyImageArray = dict()
 
-
+def buy_hail():
+    hail_cost = 100  # Chi phí để mua một thiên thạch
+    if player.money >= hail_cost:
+        player.money -= hail_cost
+        player.save_system.update_money(player.money)  # Lưu tiền sau khi mua
+        spawn_hail()
+        return True
+    return False
 
 def dispText(screen,wavenum):
     font = pygame.font.SysFont('arial', 18)
@@ -59,8 +70,17 @@ def workEvents(selected, wave, speed, pos, drawing, spawn):
                 else: print('Congratulations!! You survived the swarm')
             if event.key == pygame.K_w and speed<10: speed+=1
             if event.key == pygame.K_s and speed>1: speed-=1
-        if event.type == SPAWN_HAIL:
-            spawn_hail()
+            if event.key == pygame.K_h:  # Thêm phím tắt H để mua thiên thạch
+                if buy_hail():
+                    print("Da mua thien thach thanh cong!")
+                    try:
+                        play_sound('sounds/buy.mp3', 0.3)
+                    except:
+                        print("Khong tim thay file am thanh")
+                else:
+                    print("Khong du tien de mua thien thach!")
+        # if event.type == SPAWN_HAIL:
+        #     spawn_hail()
 
     return selected,wave,speed, pos, drawing
 
@@ -68,6 +88,12 @@ def spawn_hail():
         pos = pygame.mouse.get_pos()
         hail = Hail(pos[0], pos[1])
         hailList.append(hail)
+
+        # Phát âm thanh khi hỏa cầu xuất hiện
+        try:
+            play_sound('sounds/Fire.wav', 1 )
+        except:
+            print("Không tìm thấy file âm thanh ")
 
 SPAWN_HAIL= pygame.USEREVENT + 1
 
@@ -201,54 +227,7 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
 
-class Hail:
-    def __init__(self, x, y):
-        self.x, self.y = random.choice([
-            (0, random.randint(-10, int(screenHeight/10))), 
-            (random.randint(-10, screenWidth), 0)
-        ])
-        self.target= (x, y)
-        self.speed = 10
-        self.image = pygame.image.load("images/meteor1.png").convert_alpha()
-        self.rect= self.image.get_rect(center=(self.x, self.y))
-        self.angle = None
 
-    def draw(self, screen):
-        img= random.randint(1, 3)
-        if img==1:
-            self.image = pygame.image.load("images/meteor1.png").convert_alpha()
-        elif img==2:
-            self.image = pygame.image.load("images/meteor2.png").convert_alpha()
-        elif img==3:
-            self.image = pygame.image.load("images/meteor3.png").convert_alpha()
-        self.image = pygame.transform.rotate(self.image, 90- math.degrees(math.atan2(self.y, self.x)))
-        self.image = pygame.transform.scale(self.image, (100, 100))
-        if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
-            self.image = pygame.transform.flip(self.image, True, False)
-        self.rect = self.image.get_rect(center=self.rect.center) 
-        screen.blit(self.image, self.rect)
-        print("angle", self.angle/math.pi*180)
-
-    def move(self, screen):
-        dx = self.target[0] - self.x
-        dy = self.target[1] - self.y
-
-        self.angle= -math.atan2(dy, dx)
-        print("angle chuột", self.angle/math.pi*180)
-        print("angle enemy", math.atan2(self.y,self.x)/math.pi*180)
-        print(self.target)
-        x_target = math.cos(self.angle) * self.speed
-        y_target = -math.sin(self.angle) * self.speed
-        next_pos = (self.x + x_target, self.y + y_target)
-        distance= math.sqrt(dx**2 + dy**2)
-        if distance < self.speed:
-            self.x, self.y = self.target
-            hailList.remove(self)
-        else:
-            self.x += x_target
-            self.y += y_target
-
-        self.rect.center = (self.x, self.y)
 
 def show_instructions(screen):
     running = True
@@ -289,6 +268,14 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
 
+    # Khởi tạo các hệ thống
+    achievement_system = AchievementSystem()
+    shop_system = ShopSystem()
+    
+    # Khởi tạo player sau khi pygame đã được khởi tạo
+    global player
+    player = Player()
+    
     # Add this line to load enemy images
     loadImages()
     
@@ -299,7 +286,7 @@ def main():
     pos=[]
     spawn= True
 
-    menu = Menu()
+    menu = Menu(player)
     game_over = GameOver()
     game_state = "menu"
 
@@ -330,12 +317,50 @@ def main():
                     if button_clicked == 0:
                         game_state = "game"
                     elif button_clicked == 1:
-                        game_state = "instructions"
+                        # Cập nhật tiền trước khi vào shop
+                        player.money = player.save_system.get_money()
+                        game_state = "shop"
                     elif button_clicked == 2:
+                        game_state = "instructions"
+                    elif button_clicked == 3:
                         pygame.quit()
                         sys.exit()
 
             menu.draw(screen, pygame.mouse.get_pos())
+            pygame.display.flip()
+            clock.tick(fps)
+
+        elif game_state == "shop":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        game_state = "menu"
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    y_offset = 200
+                    for item_id, item in shop_system.items.items():
+                        item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
+                        buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
+                        
+                        if buy_rect.collidepoint(mouse_pos):
+                            if player.money >= item['cost']:
+                                if shop_system.buy_item(item_id, player):
+                                    try:
+                                        play_sound('sounds/buy.mp3', 0.3)
+                                    except:
+                                        print("Khong tim thay file am thanh")
+                                    print(f"Da mua {item['name']}")
+                                    # Cập nhật lại tiền sau khi mua
+                                    player.money = player.save_system.get_money()
+                            else:
+                                print("Khong du tien de mua!")
+                        y_offset += 100
+
+            screen.fill((0, 0, 0))
+            shop_system.draw_shop(screen)
             pygame.display.flip()
             clock.tick(fps)
 
@@ -355,7 +380,15 @@ def main():
             screen.blit(level_img,(0,0))
             mpos = pygame.mouse.get_pos()
 
-            if senderList: wave = senderList[0].update(frametime,wave)
+            if senderList: 
+                wave = senderList[0].update(frametime,wave)
+                player.wave = wave  # Cập nhật wave cho player
+
+            # Kiểm tra thành tích
+            achievement_system.check_achievements(player)
+
+            # Cập nhật tiền
+            player.update_money(player.money)
 
             z0,z1 = [],[]
             for enemy in enemyList:
@@ -415,12 +448,14 @@ def main():
             if draw_cloud()== True:
                 screen.blit(cloud_image, (0, 0))
                 for enemy in enemyList[:]:
-                    if enemy.move(frametime):
-                        try:
-                            play_sound('sounds/life_lost.mp3', 0.3)
-                        except:
-                            print("Sound file not found")
+                    enemy.move(frametime)
                 pygame.display.flip()
+
+            # Vẽ thông báo thành tích
+            achievement_system.draw_notifications(screen)
+            
+            # Vẽ tiến độ thành tích
+            achievement_system.draw_progress(screen)
 
             for hail in hailList[:]:
                 hail.move(screen)
@@ -448,8 +483,8 @@ def main():
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if game_over.handle_click(event.pos):
                         # Reset game state
-                        player.health = 1
-                        player.money = 30000000
+                        player.health = shop_system.get_total_health()
+                        player.money = player.save_system.get_money()
                         player.score = 0
                         player.level = 1
                         player.exp = 0
