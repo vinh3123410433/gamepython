@@ -1,5 +1,6 @@
-from setting import screenWidth, screenHeight
+from setting import screenWidth, screenHeight, play_music, stop_music, sound_manager
 import pygame
+import sys
 
 class Menu:
     def __init__(self, player):
@@ -10,7 +11,8 @@ class Menu:
             {'text': 'START', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
             {'text': 'SHOP', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
             {'text': 'HUONG DAN', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
-            {'text': 'ESC', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
+            {'text': 'AM THANH: BAT' if sound_manager.music_enabled else 'AM THANH: TAT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None},
+            {'text': 'THOAT', 'color': (255, 255, 255), 'hover_color': (0, 255, 0), 'rect': None}
         ]
         self.game_title = self.font_big.render('TOWER DEFENSE', True, (255, 215, 0))
         self.title_rect = self.game_title.get_rect(center=(screenWidth // 2, 100))
@@ -41,5 +43,20 @@ class Menu:
     def handle_click(self, mouse_pos):
         for i, button in enumerate(self.buttons):
             if button['rect'].collidepoint(mouse_pos):
+                if i == 3:  # Nút âm thanh
+                    try:
+                        sound_manager.music_enabled = not sound_manager.music_enabled
+                        if sound_manager.music_enabled:
+                            play_music('music/maintheme.mp3')
+                            self.buttons[3]['text'] = 'AM THANH: BAT'
+                        else:
+                            stop_music()
+                            self.buttons[3]['text'] = 'AM THANH: TAT'
+                        sound_manager.save_settings()
+                        self.initialize_buttons()
+                    except:
+                        print("Không thể thay đổi trạng thái âm thanh")
+                elif i == 4:  # Nút thoát
+                    return 'quit'  # Trả về giá trị đặc biệt để báo hiệu thoát
                 return i
         return None

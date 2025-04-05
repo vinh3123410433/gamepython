@@ -19,7 +19,7 @@ mapvar = Map()
 EnemyImageArray = dict()
 
 def buy_hail():
-    hail_cost = 100  # Chi phí để mua một thiên thạch
+    hail_cost = 2000  # Chi phí để mua một thiên thạch
     if player.money >= hail_cost:
         player.money -= hail_cost
         player.save_system.update_money(player.money)  # Lưu tiền sau khi mua
@@ -268,11 +268,19 @@ def show_instructions(screen):
 
 def main():
     pygame.init()
+    try:
+        pygame.mixer.init()
+    except:
+        print("Không thể khởi tạo âm thanh")
+    
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pygame.display.set_caption('Bloons Tower Defence')
     screen = pygame.display.set_mode((screenWidth,screenHeight))
     clock = pygame.time.Clock()
     font = pygame.font.Font(None,20)
+
+    # Load cài đặt
+    sound_manager.load_settings()
 
     # Khởi tạo các hệ thống
     achievement_system = AchievementSystem()
@@ -328,7 +336,7 @@ def main():
                         game_state = "shop"
                     elif button_clicked == 2:
                         game_state = "instructions"
-                    elif button_clicked == 3:
+                    elif button_clicked == 'quit':  # Xử lý nút thoát
                         pygame.quit()
                         sys.exit()
 
