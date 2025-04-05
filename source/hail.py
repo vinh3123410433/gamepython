@@ -46,7 +46,3 @@ class Hail:
             self.y += y_target
 
         self.rect.center = (self.x, self.y)
-
-    def update(self):
-        if self.x== self.target[0] and self.y==self.target[1]:
-            hailList.remove(self)

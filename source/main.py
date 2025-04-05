@@ -474,7 +474,9 @@ def main():
                     hailList[i].move(screen)
                     hailList[i].draw(screen)
             for hail in hailList[:]:
-                hail.update()
+                if hail.x== hail.target[0] and hail.y==hail.target[1]:
+                    hailList.remove(hail)
+                    explosionList.append(Explosion(hail.x, hail.y))
 
             for hail in hailList[:]:
                 if hail.x != 0 and hail.y != 0:
