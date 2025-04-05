@@ -374,8 +374,10 @@ def main():
         elif game_state == "game":
             starttime = time.time()
             clock.tick(fps)
-            frametime = (time.time()-starttime)*speed
+            # frametime = (time.time()-starttime)*speed #thời gian thực giữa 2 khung hình
+            frametime = 1/fps*speed #thời gian cố định giữa 2 khung hình
             
+            print("FPS: ", 1/frametime)
             # Kiểm tra health = 0
             if player.health <= 0:
                 game_state = "game_over"
