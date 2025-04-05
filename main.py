@@ -330,6 +330,12 @@ def spawn_hail():
         hail = Hail(pos[0], pos[1])
         hailList.append(hail)
 
+        # Phát âm thanh khi hỏa cầu xuất hiện
+        try:
+            play_sound('sounds/Fire.wav', 1 )
+        except:
+            print("Không tìm thấy file âm thanh ")
+
 SPAWN_HAIL= pygame.USEREVENT + 1
 
 def detect(surface_temp):
@@ -422,6 +428,13 @@ class Explosion:
         self.start_time = pygame.time.get_ticks()
         self.img= None
         self.duration = 300  
+        
+        # Phát âm thanh nổ khi tạo explosion
+        try:
+            play_sound('sounds/explosion.wav', 0.4 )
+        except:
+            print("Không tìm thấy file âm thanh explosion ")
+
 
     def draw(self, screen):
         boom1 = pygame.image.load("images/boom1.png").convert_alpha()
