@@ -48,7 +48,7 @@ class Player:
 
     def __init__(self):
         self.health = 1
-        self.money = 30000000
+        self.money = 0
         self.score = 0
         self.level = 1
         self.exp = 0
