@@ -206,17 +206,18 @@ class ShopSystem:
         if item_id in self.items:
             item = self.items[item_id]
             if player.money >= item['cost']:
-                # Trừ tiền
+                # Trừ tiền và cập nhật vào save system
                 player.money -= item['cost']
                 self.save_system.update_money(player.money)
                 
-                # Tăng số lần mua
+                # Tăng số lần mua và cập nhật vào save system
                 self.items[item_id]['bought'] += 1
                 self.save_system.update_shop_items(self.items)
                 
                 # Cập nhật sức khỏe
-                player.health = self.get_total_health()
-                player.max_health = player.health
+                total_health = self.get_total_health()
+                player.health = total_health
+                player.max_health = total_health
                     
                 return True
         return False
