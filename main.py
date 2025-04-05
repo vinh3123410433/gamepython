@@ -48,7 +48,21 @@ def imgLoad(file,size=None):
     return pygame.transform.scale(image,size) if size else image
 
 class Player:
-
+    towers = [ # Name of monkey tower
+        'Dart Monkey',
+        'Tack Shooter',
+        'Sniper Monkey',
+        'Boomerang Thrower',
+        'Ninja Monkey',
+        'Bomb Tower',
+        'Ice Tower',
+        'Glue Gunner',
+        'Monkey Buccaneer',
+        'Super Monkey',
+        'Monkey Apprentice',
+        'Spike Factory',
+        'Road Spikes',
+        'Exploding Pineapple',]
     def __init__(self):
         self.health = 10
         self.money = 30000000
@@ -56,6 +70,7 @@ class Player:
         self.level = 1
         self.exp = 0
         self.exp_to_next_level = 1000
+        self.tower_upgrades = {}  # Lưu trữ trạng thái nâng cấp của tháp
 
     def add_exp(self, amount):
         self.exp += amount
@@ -76,7 +91,6 @@ player = Player()
 # store images using a dictionary 
 EnemyImageArray = dict()
 TowerImageArray = dict()
-
 def loadImages():
     for tower in player.towers: TowerImageArray[tower] = imgLoad('towers/'+tower.lower()+'.png')
     # load selected tower
@@ -86,7 +100,7 @@ def loadImages():
     width,height = bloon.get_size()
     for name in colors:
         image = bloon.copy()
-        for x in range(width): 
+        for x in range(width):
             for y in range(height):
                 p = image.get_at((x,y))[:-1]
                 if p not in ((0,0,0),(255,255,255)):
@@ -96,6 +110,9 @@ def loadImages():
                     image.set_at((x,y),(min(int(r),255),min(int(g),255),min(int(b),255)))
         EnemyImageArray[name] = image
 
+def get_angle(a,b):
+    # return 180-(math.atan2(b[0]-a[0],b[1]-a[1]))/(math.pi/180)
+    return (math.atan2(b[1]-a[1],b[0]-a[0]))/(math.pi/180) +90
 
 class Map:
     # setup map
@@ -141,31 +158,25 @@ class Enemy:
 
     # initalize enemy
     def __init__(self,layer):
-        self.layer = layer  # Lưu chỉ số cấp độ của kẻ địch
-        self.setLayer()     # Thiết lập các thuộc tính dựa trên cấp độ 
-        self.targets = mapvar.targets  # Lấy các điểm đường đi từ bản đồ
-        self.pos = list(self.targets[0])  # Vị trí bắt đầu
-        self.target = 0  # Chỉ số điểm đích tiếp theo
-        self.next_target()  # Tính toán hướng đi tiếp theo
-        self.rect = self.image.get_rect(center=self.pos)  # Tạo hình chữ nhật để xử lý va chạm
-        self.distance = 0  # Theo dõi khoảng cách đã di chuyển
+        self.layer = layer #index
+        self.setLayer()
+        self.targets = mapvar.targets
+        self.pos = list(self.targets[0])
+        self.target = 0 #index
+        self.next_target()
+        self.rect = self.image.get_rect(center=self.pos)
+        self.distance = 0
         # Chọn ngẫu nhiên loại hình và màu khi khởi tạo
-        self.shape_type = random.randint(0, 4)  # Chọn ngẫu nhiên hình dạng (0-4)
-        # 0: gạch ngang
-        # 1: gạch dọc
-        # 2: gạch chéo phải
-        # 3: hình chữ V
-        # 4: hình tròn
-
-        self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))  # Màu RGB ngẫu nhiên
-        self.event = random.randint(0, 10)  # Số sự kiện ngẫu nhiên
-        self.start = 0  # Thời gian bắt đầu cho sự kiện
-        enemyList.append(self)  # Tự thêm kẻ địch vào danh sách quản lý toàn cục
+        self.shape_type = random.randint(0, 4)
+        self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        self.event= random.randint(0, 10)
+        self.start= 0
+        enemyList.append(self) #sau khi khởi tạo thì tự thêm chính nó vào mảng
 
     def setLayer(self): 
         self.name,self.health,self.speed,self.cashprize,self.exp_reward = self.layers[self.layer]
         self.image = EnemyImageArray[self.name]
-    # đây là function kiểu như là next level của kẻ địch
+
     def nextLayer(self): 
         old = self.shape_type
         valid_numbers = [n for n in range(0, 3) if n !=old]
@@ -193,37 +204,7 @@ class Enemy:
             #self.vx,self.vy = math.sin(math.radians(self.angle)),-math.cos(math.radians(self.angle)) #tính từ điểm kết thúc
             
         # end game / player if so (no health)
-        else:
-            damage = self.layer + 1
-            player.health -= damage
-            player.score = max(0, player.score - 50)  # Score penalty
-            
-            # Create damage message
-            font = pygame.font.Font(None, 36)
-            msg = font.render(f"-{damage}", True, (255, 0, 0))
-            msg_rect = msg.get_rect(center=(self.pos[0], self.pos[1] - 20))
-            
-            # Show damage message briefly
-            screen = pygame.display.get_surface()
-            screen.blit(msg, msg_rect)
-            pygame.display.update(msg_rect)
-            
-            # Play sound effect
-            try:
-                play_sound('sounds/life_lost.mp3', 0.3)
-            except:
-                print("Sound file not found")
-                
-            # Visual feedback - screen flash
-            flash = pygame.Surface((screenWidth, screenHeight))
-            flash.fill((255, 0, 0))
-            for alpha in range(0, 255, 51):
-                flash.set_alpha(255 - alpha)
-                screen.blit(flash, (0,0))
-                pygame.display.flip()
-                pygame.time.delay(5)
-                
-            self.kill()
+        else: self.kill(); player.health -= (self.layer+1) #index layer hiện tại +1
 
     def speedup(self):
         self.speed += 1
@@ -1010,5 +991,5 @@ def main():
             pygame.display.flip()
 
 if __name__ == '__main__':
-     main()
+    main()
 #'20*1','30*1',
