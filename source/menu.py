@@ -29,7 +29,7 @@ class Menu:
         
         # Vẽ số tiền hiện tại
         money_font = pygame.font.Font(None, 36)
-        money_text = money_font.render(f"Tiền: {self.player.money}", True, (255, 215, 0))
+        money_text = money_font.render(f"MONEY: {self.player.money}", True, (255, 215, 0))
         money_rect = money_text.get_rect(center=(screenWidth // 2, 200))
         screen.blit(money_text, money_rect)
         
