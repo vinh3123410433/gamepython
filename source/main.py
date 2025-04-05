@@ -42,7 +42,8 @@ def dispText(screen,wavenum):
         text = font.render(string,2,(0,0,0))
         screen.blit(text,text.get_rect(midleft=pos))
 
-def workEvents(selected, wave, speed, pos, drawing, spawn):
+def workEvents(selected, wave, speed, pos, drawing):
+    buy= False
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
         if event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
@@ -70,8 +71,11 @@ def workEvents(selected, wave, speed, pos, drawing, spawn):
                 else: print('Congratulations!! You survived the swarm')
             if event.key == pygame.K_w and speed<10: speed+=1
             if event.key == pygame.K_s and speed>1: speed-=1
-            if event.key == pygame.K_h:  # Thêm phím tắt H để mua thiên thạch
+            if event.key == pygame.K_h and buy == False:  # Thêm phím tắt H để mua thiên thạch
+                buy = True
+            if event.key == pygame.K_h and buy== True:
                 if buy_hail():
+                    buy = True
                     print("Da mua thien thach thanh cong!")
                     try:
                         play_sound('sounds/buy.mp3', 0.3)
@@ -79,15 +83,17 @@ def workEvents(selected, wave, speed, pos, drawing, spawn):
                         print("Khong tim thay file am thanh")
                 else:
                     print("Khong du tien de mua thien thach!")
+        
         # if event.type == SPAWN_HAIL:
         #     spawn_hail()
 
     return selected,wave,speed, pos, drawing
 
 def spawn_hail():
-        pos = pygame.mouse.get_pos()
-        hail = Hail(pos[0], pos[1])
-        hailList.append(hail)
+        for i in range(20):
+            pos = (random.randint(0, screenWidth), random.randint(0, screenHeight))
+            hail = Hail(pos[0], pos[1])
+            hailList.append(hail)
 
         # Phát âm thanh khi hỏa cầu xuất hiện
         try:
@@ -281,10 +287,10 @@ def main():
     
     mapvar.getmovelist()
 
-    pygame.time.set_timer(SPAWN_HAIL, 3000)
     drawing= False
     pos=[]
-    spawn= True
+    spawn= pygame.time.get_ticks()
+    index_to_draw = 0
 
     menu = Menu(player)
     game_over = GameOver()
@@ -411,7 +417,7 @@ def main():
                 enemy.draw_health_bar(screen)
 
             screen.blit(background,(0,0))
-            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing, spawn)
+            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing)
             surface_temp= pygame.Surface((800,600)).convert_alpha()
             surface_temp.fill((0,0,0,0))
             if (len(pos)>1):
@@ -457,17 +463,29 @@ def main():
             # Vẽ tiến độ thành tích
             achievement_system.draw_progress(screen)
 
+            print(len(hailList))
+
+            current = pygame.time.get_ticks()
+            if current - spawn > 3000:
+                if index_to_draw < min(5, len(hailList)):
+                    spawn = current
+                    index_to_draw += 1  # mỗi 3s cho phép vẽ thêm 5 hail
+
+            # Vẽ các hail được phép vẽ ra
+            for i in range(min(index_to_draw, len(hailList))):
+                    hailList[i].move(screen)
+                    hailList[i].draw(screen)
             for hail in hailList[:]:
-                hail.move(screen)
-                hail.draw(screen)
-                
-                for enemy in enemyList[:]:
-                    if hail.rect.colliderect(enemy.rect):
-                        enemy.kill()
-                        if (hail in hailList): 
-                            start_time= pygame.time.get_ticks()
-                            hailList.remove(hail)
-                            explosionList.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
+                hail.update()
+
+            for hail in hailList[:]:
+                if hail.x != 0 and hail.y != 0:
+                    for enemy in enemyList[:]:
+                        if enemy.rect.colliderect(hail.rect):
+                            enemy.kill()
+                            if (hail in hailList): 
+                                hailList.remove(hail)
+                                explosionList.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
             for explosion in explosionList[:]:
                 explosion.draw(screen)
                 if explosion.is_done():

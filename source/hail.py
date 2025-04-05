@@ -12,7 +12,7 @@ class Hail:
         self.speed = 10
         self.image = pygame.image.load("images/meteor1.png").convert_alpha()
         self.rect= self.image.get_rect(center=(self.x, self.y))
-        self.angle = None
+        self.angle= 0
 
     def draw(self, screen):
         img= random.randint(1, 3)
@@ -26,17 +26,14 @@ class Hail:
         self.image = pygame.transform.scale(self.image, (100, 100))
         if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
             self.image = pygame.transform.flip(self.image, True, False)
-        self.rect = self.image.get_rect(center=self.rect.center) 
+        self.rect= self.image.get_rect(center=(self.x, self.y)) 
         screen.blit(self.image, self.rect)
-        print("angle", self.angle/math.pi*180)
 
     def move(self, screen):
         dx = self.target[0] - self.x
         dy = self.target[1] - self.y
 
         self.angle= -math.atan2(dy, dx)
-        print("angle chuột", self.angle/math.pi*180)
-        print("angle enemy", math.atan2(self.y,self.x)/math.pi*180)
         print(self.target)
         x_target = math.cos(self.angle) * self.speed
         y_target = -math.sin(self.angle) * self.speed
@@ -44,9 +41,12 @@ class Hail:
         distance= math.sqrt(dx**2 + dy**2)
         if distance < self.speed:
             self.x, self.y = self.target
-            hailList.remove(self)
         else:
             self.x += x_target
             self.y += y_target
 
         self.rect.center = (self.x, self.y)
+
+    def update(self):
+        if self.x== self.target[0] and self.y==self.target[1]:
+            hailList.remove(self)

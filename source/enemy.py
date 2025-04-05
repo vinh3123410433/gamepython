@@ -58,7 +58,6 @@ class Enemy:
         else:
             damage = self.layer + 1
             self.player.health -= damage
-            print(f"Player bị mất {damage} máu!")
             self.player.score = max(0, self.player.score - 50)
             self.kill()
 
@@ -75,7 +74,6 @@ class Enemy:
     def kill(self):
         if self in enemyList:
             enemyList.remove(self)
-        print(f"Enemy {self.name} popped!")
         self.player.score += 100
         self.player.money += self.cashprize
         self.player.add_exp(self.exp_reward)
@@ -95,7 +93,6 @@ class Enemy:
         if (a[0]-c[0])**2 + (a[1]-c[1])**2 >(b[0]-c[0])**2 + (b[1]-c[1])**2: self.next_target()
         self.rect.center = self.pos
         self.distance+=speed
-        print("target", self.target, "len", len(self.targets))
         
 
     def draw_health_bar(self, screen):
