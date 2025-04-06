@@ -344,7 +344,7 @@ def main():
     guildface= pygame.Surface((800,600)).convert_alpha()
     guildface.fill((0,0,0,0))
 
-    play_music('music/maintheme.mp3')
+    play_music('music/Ruby_chan1.mp3')
     while True:
         if game_state == "menu":
             for event in pygame.event.get():
