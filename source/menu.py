@@ -19,6 +19,11 @@ class Menu:
         self.button_spacing = 80
         self.initialize_buttons()
 
+        self.bg_image = pygame.image.load("background/Background_MergedForReference.jpg").convert()
+        self.bg_image = pygame.transform.scale(self.bg_image, (screenWidth, screenHeight))
+        self.bg_x = 0
+        self.bg_speed = 1
+
     def initialize_buttons(self):
         for i, button in enumerate(self.buttons):
             text_surface = self.font_small.render(button['text'], True, button['color'])
@@ -26,7 +31,14 @@ class Menu:
             button['rect'] = text_rect
 
     def draw(self, screen, mouse_pos):
-        screen.fill((0, 0, 0))
+        # Vẽ nền động cuộn ngang
+        self.bg_x -= self.bg_speed
+        if self.bg_x <= -screenWidth:
+            self.bg_x = 0
+
+        screen.blit(self.bg_image, (self.bg_x, 0))
+        screen.blit(self.bg_image, (self.bg_x + screenWidth, 0))
+
         screen.blit(self.game_title, self.title_rect)
         
         # Vẽ số tiền hiện tại

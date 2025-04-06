@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 from save_system import SaveSystem
+from setting import screenWidth, screenHeight
 
 # Hệ thống Achievements
 class AchievementSystem:
@@ -149,6 +150,8 @@ class ShopSystem:
         self.save_system = SaveSystem()
         self.items = self.save_system.get_shop_items()
         self.fonts = {}
+        self.background = pygame.image.load("background/WDT1.PNG")
+        self.background = pygame.transform.scale(self.background, (screenWidth, screenHeight))
         
     def get_font(self, size):
         if size not in self.fonts:
@@ -157,11 +160,11 @@ class ShopSystem:
         
     def draw_shop(self, screen):
         # Vẽ background
-        screen.fill((0, 0, 0))
+        screen.blit(self.background, (0, 0))
         
         # Vẽ tiêu đề
         title = self.get_font(48).render("CUA HANG", True, (255, 215, 0))
-        title_rect = title.get_rect(centerx=screen.get_width() // 2, y=50)
+        title_rect = title.get_rect(centerx=screen.get_width() // 2, y=70)
         screen.blit(title, title_rect)
         
         # Vẽ số tiền hiện tại
@@ -179,9 +182,10 @@ class ShopSystem:
         y_offset = 200
         for item_id, item in self.items.items():
             # Vẽ background cho item
+            item_bg_image = pygame.image.load('background/Tab2.PNG')
             item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
-            pygame.draw.rect(screen, (50, 50, 50), item_rect)
-            pygame.draw.rect(screen, (100, 100, 100), item_rect, 2)
+            item_bg_scaled = pygame.transform.scale(item_bg_image, item_rect.size)
+            screen.blit(item_bg_scaled, item_rect.topleft)
             
             # Vẽ tên item và số lần đã mua
             name_text = self.get_font(36).render(f"{item['name']} (Da mua: {item['bought']})", True, (255, 255, 255))
@@ -194,7 +198,7 @@ class ShopSystem:
             screen.blit(cost_text, cost_rect)
             
             # Vẽ nút mua
-            buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
+            buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 70, 40)
             pygame.draw.rect(screen, (0, 200, 0), buy_rect)
             buy_text = self.get_font(24).render("MUA", True, (255, 255, 255))
             buy_text_rect = buy_text.get_rect(center=buy_rect.center)

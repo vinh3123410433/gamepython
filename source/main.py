@@ -14,6 +14,7 @@ from save_system import SaveSystem
 from hail import Hail
 from sound_button import SoundButton  # Thêm import
 
+
 player = Player()
 mapvar = Map()
 # store images using a dictionary 
@@ -243,6 +244,9 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
 def show_instructions(screen):
     running = True
     font = pygame.font.Font(None, 36)
+    background_image = pygame.image.load('background/Paper.jpg') 
+    background_image = pygame.transform.scale(background_image, (screenWidth, screenHeight))
+    screen.blit(background_image, (0, 0))
     instructions = [
         "HUONG DAN CHOI:",
         "- Dat cac thap de bao ve duong di",
@@ -252,7 +256,7 @@ def show_instructions(screen):
         "- Ve hinh tuong ung voi ky hieu tren quai de tieu diet",
         "",
         "Nhan ESC de quay lai"
-    ]
+    ] 
 
     
     while running:
