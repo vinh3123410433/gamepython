@@ -43,7 +43,7 @@ def dispText(screen,wavenum):
         text = font.render(string,2,(0,0,0))
         screen.blit(text,text.get_rect(midleft=pos))
 
-def workEvents(selected, wave, speed, pos, drawing, sound_button):
+def workEvents(selected, wave, speed, pos, drawing, sound_button, pos_temp):
     buy= False
     for event in pygame.event.get():
         if event.type == pygame.QUIT: pygame.quit(); sys.exit()
@@ -55,6 +55,7 @@ def workEvents(selected, wave, speed, pos, drawing, sound_button):
                 
             drawing = True
             pos= [pygame.mouse.get_pos()]
+            pos.append(pygame.mouse.get_pos())
         if event.type == pygame.MOUSEMOTION and drawing == True:
             mpos = pygame.mouse.get_pos()
             if len(pos) > 0:
@@ -66,7 +67,7 @@ def workEvents(selected, wave, speed, pos, drawing, sound_button):
                     x = last_pos[0] + dx * i / dist
                     y = last_pos[1] + dy * i / dist
                     pos.append((int(x), int(y)))
-            pos.append(mpos)
+                    pos_temp.append((int(x), int(y)))
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             drawing = False
             pos=[]
@@ -92,7 +93,7 @@ def workEvents(selected, wave, speed, pos, drawing, sound_button):
         # if event.type == SPAWN_HAIL:
         #     spawn_hail()
 
-    return selected,wave,speed, pos, drawing
+    return selected,wave,speed, pos, drawing, pos_temp
 
 def spawn_hail():
         for i in range(20):
@@ -111,6 +112,8 @@ SPAWN_HAIL= pygame.USEREVENT + 1
 def detect(surface_temp):
     img = pygame.surfarray.array3d(surface_temp)
     img = numpy.transpose(img, (1, 0, 2))
+    
+    cv2.imshow("hehe", img)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
@@ -204,7 +207,7 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
         contour_rect = cv2.boundingRect(contour)
 
         for enemy in enemyList[:]:
-                rdm = random.randint(1, 2)
+                rdm = random.randint(1, 5)
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
                     if rdm==1:
                         enemy.speedup()
@@ -310,6 +313,11 @@ def main():
     menu = Menu(player)
     game_over = GameOver()
     game_state = "menu"
+    alpha= 255
+    pos_temp=[]
+    surface_temp= pygame.Surface((800,600)).convert_alpha()
+    surface_temp.fill((0,0,0,0))
+    draw_time= pygame.time.get_ticks()
 
     background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
     heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
@@ -415,7 +423,6 @@ def main():
                 if d> 790 and d<960: z0.append(enemy)
                 elif d> 2420 and d< 2650: z0.append(enemy)
                 else: z1.append(enemy)
-                print(enemyList[0].distance)
 
             for enemy in z0:
                 enemy.move(frametime)
@@ -429,41 +436,53 @@ def main():
                 enemy.draw_health_bar(screen)
 
             screen.blit(background,(0,0))
-            selected,wave,speed, pos, drawing = workEvents(selected,wave,speed, pos, drawing, sound_button)
-            surface_temp= pygame.Surface((800,600)).convert_alpha()
-            surface_temp.fill((0,0,0,0))
-            if (len(pos)>1):
-                pygame.draw.aalines(surface_temp, (255, 255, 255), False, pos, 8)
+            selected,wave,speed, pos, drawing, pos_temp = workEvents(selected,wave,speed, pos, drawing, sound_button, pos_temp)
+            
+            guildface= pygame.Surface((800,600)).convert_alpha()
+            guildface.fill((0,0,0,0))
+            if (len(pos_temp)>2):
                 if drawing:
-                    guide_surface = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
-                    pygame.draw.aalines(guide_surface, (100, 100, 255, 128), False, pos, 12)
-                    screen.blit(guide_surface, (0, 0))
+                    
+                    pygame.draw.lines(guildface, (22, 62, 80), False, pos, 8)
+                    screen.blit(guildface, (0, 0))
+                    pygame.draw.lines(surface_temp, (22, 62, 80), False, pos_temp, 8)
             dispText(screen,wave)
             
             # Vẽ nút âm thanh
             sound_button.draw(screen, pygame.mouse.get_pos())
-            
-            if len(pos) > 10:
+            if drawing== False: alpha= 255
+            if len(pos_temp) > 10 and drawing == False:
                 shape_detected = detect(surface_temp)
                 if shape_detected:
                     check_collision_with_enemies(shape_detected, surface_temp, screen)
                     if shape_detected == "horizontal":
+                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
+                        alpha= max(0, alpha- 20)
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                     elif shape_detected == "vertical":
+                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
+                        alpha= max(0, alpha- 20)
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                     elif shape_detected == "diagonal_right":
+                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
+                        alpha= max(0, alpha- 20)
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                     elif shape_detected == "v_shape":
+                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
+                        alpha= max(0, alpha- 20)
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
-                        surface_temp.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-            screen.blit(surface_temp,(0,0))
+                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+                surface_temp= pygame.Surface((800,600)).convert_alpha()
+                print (pygame.time.get_ticks()- draw_time)
+                screen.blit(guildface, (0,0))
+                pos_temp= []
             event_enemy(screen)
             cloud_image = pygame.image.load("images/mud.png")
             cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
