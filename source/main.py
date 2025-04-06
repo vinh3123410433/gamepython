@@ -177,7 +177,6 @@ def event_enemy(screen):
             if num==0: 
                 startList. append(pygame.time.get_ticks())
                 enemy.kill()
-            print(startList)
 
 def draw_cloud():
         if len(startList) > 0:
@@ -391,9 +390,7 @@ def main():
             starttime = time.time()
             clock.tick(fps)
             # frametime = (time.time()-starttime)*speed #thời gian thực giữa 2 khung hình
-            frametime = 1/fps*speed #thời gian cố định giữa 2 khung hình
-            
-            print("FPS: ", 1/frametime)
+            frametime = 1/fps*speed #thời gian cố định giữa 2 khu
             # Kiểm tra health = 0
             if player.health <= 0:
                 game_state = "game_over"
@@ -415,11 +412,10 @@ def main():
             z0,z1 = [],[]
             for enemy in enemyList:
                 d = enemy.distance
-                if d<580: z1+=[enemy]
-                elif d<950: z0+=[enemy]
-                elif d<2392: z1+=[enemy]
-                elif d<2580: z0+=[enemy]
-                else: z0+=[enemy]
+                if d> 790 and d<960: z0.append(enemy)
+                elif d> 2420 and d< 2650: z0.append(enemy)
+                else: z1.append(enemy)
+                print(enemyList[0].distance)
 
             for enemy in z0:
                 enemy.move(frametime)
@@ -482,7 +478,6 @@ def main():
             # Vẽ tiến độ thành tích
             achievement_system.draw_progress(screen)
 
-            print(len(hailList))
 
             current = pygame.time.get_ticks()
             if current - spawn > 3000:

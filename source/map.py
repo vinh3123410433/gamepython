@@ -4,7 +4,6 @@ class Map:
     def __init__(self):
         self.map = 'monkey lane'
         self.loadmap()
-        print(self.targets)
 
     def loadmap(self):
         self.targets = eval(open('maps/%s/targets.txt' % self.map,'r').read())
