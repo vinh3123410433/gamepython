@@ -112,8 +112,6 @@ SPAWN_HAIL= pygame.USEREVENT + 1
 def detect(surface_temp):
     img = pygame.surfarray.array3d(surface_temp)
     img = numpy.transpose(img, (1, 0, 2))
-    
-    cv2.imshow("hehe", img)
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
@@ -310,6 +308,7 @@ def main():
     spawn= pygame.time.get_ticks()
     index_to_draw = 0
 
+    shape_correct = False
     menu = Menu(player)
     game_over = GameOver()
     game_state = "menu"
@@ -333,6 +332,9 @@ def main():
     selected = None
     speed = 3
     wave = 1
+
+    guildface= pygame.Surface((800,600)).convert_alpha()
+    guildface.fill((0,0,0,0))
 
     play_music('music/maintheme.mp3')
     while True:
@@ -438,51 +440,77 @@ def main():
             screen.blit(background,(0,0))
             selected,wave,speed, pos, drawing, pos_temp = workEvents(selected,wave,speed, pos, drawing, sound_button, pos_temp)
             
-            guildface= pygame.Surface((800,600)).convert_alpha()
-            guildface.fill((0,0,0,0))
-            if (len(pos_temp)>2):
+            if len(pos_temp) > 2:
                 if drawing:
-                    
+                    # Vẽ đường khi người dùng đang vẽ
                     pygame.draw.lines(guildface, (22, 62, 80), False, pos, 8)
-                    screen.blit(guildface, (0, 0))
+                    screen.blit(guildface, (0, 0))  # Vẽ guildface lên màn hình
+
+                    # Vẽ lên surface_temp (với các nét vẽ của người dùng)
                     pygame.draw.lines(surface_temp, (22, 62, 80), False, pos_temp, 8)
-            dispText(screen,wave)
+
+            dispText(screen, wave)
             
             # Vẽ nút âm thanh
             sound_button.draw(screen, pygame.mouse.get_pos())
-            if drawing== False: alpha= 255
-            if len(pos_temp) > 10 and drawing == False:
+
+            # Kiểm tra hình dạng người dùng đã vẽ và xem có đúng không
+            if len(pos_temp) > 10 and not drawing:
                 shape_detected = detect(surface_temp)
+
                 if shape_detected:
                     check_collision_with_enemies(shape_detected, surface_temp, screen)
+                    
                     if shape_detected == "horizontal":
                         pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        alpha= max(0, alpha- 20)
+                        shape_correct = True  # Đánh dấu là vẽ đúng
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
                         guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                     elif shape_detected == "vertical":
                         pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        alpha= max(0, alpha- 20)
+                        shape_correct = True  # Đánh dấu là vẽ đúng
                         font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach đung", 2, (255, 255, 255))
+                        text = font.render("Ban da ve gach dung", 2, (255, 255, 255))
                         guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                     elif shape_detected == "diagonal_right":
                         pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        alpha= max(0, alpha- 20)
+                        shape_correct = True  # Đánh dấu là vẽ đúng
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
                         guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
                     elif shape_detected == "v_shape":
                         pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        alpha= max(0, alpha- 20)
+                        shape_correct = True  # Đánh dấu là vẽ đúng
                         font = pygame.font.SysFont('arial', 22)
                         text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
                         guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                surface_temp= pygame.Surface((800,600)).convert_alpha()
-                print (pygame.time.get_ticks()- draw_time)
-                screen.blit(guildface, (0,0))
-                pos_temp= []
+                    elif shape_detected == "circle":
+                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
+                        shape_correct = True  # Đánh dấu là vẽ đúng
+                        font = pygame.font.SysFont('arial', 22)
+                        text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
+                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
+
+                print(alpha)
+                if shape_correct:  
+                    if alpha > 0:
+                        alpha = max(0, alpha - 20)
+                        print(alpha)
+                    else: alpha= 255  
+                else:
+                    alpha = 255
+                    guildface.fill((0,0,0,0)) 
+                    pos_temp = []
+                    surface_temp = pygame.Surface((800, 600)).convert_alpha() 
+
+                if alpha == 0:
+                    surface_temp = pygame.Surface((800, 600)).convert_alpha() 
+                    guildface.fill((0,0,0,0)) 
+                    pos_temp = []  # Reset lại pos_temp sau khi vẽ xong
+                    shape_correct = False  # Reset trạng thái vẽ đúng
+            # Vẽ guildface lên màn hình với alpha đã thay đổi
+            screen.blit(guildface, (0, 0))
             event_enemy(screen)
             cloud_image = pygame.image.load("images/mud.png")
             cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
