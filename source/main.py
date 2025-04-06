@@ -249,7 +249,6 @@ def show_instructions(screen):
     screen.blit(background_image, (0, 0))
     instructions = [
         "HUONG DAN CHOI:",
-        "- Dat cac thap de bao ve duong di",
         "- Tieu diet ke dich de nhan tien",
         "- Bao ve can cu khong de ke dich di qua",
         "- Nhan SPACE de bat dau wave quai",
@@ -257,7 +256,9 @@ def show_instructions(screen):
         "",
         "Nhan ESC de quay lai"
     ] 
-
+    # Tính toán vị trí bắt đầu cho các dòng hướng dẫn
+    total_height = len(instructions) * 50  # Khoảng cách giữa các dòng là 50
+    start_y = (screenHeight - total_height) // 2  # Vị trí bắt đầu theo chiều dọc
     
     while running:
         for event in pygame.event.get():
@@ -268,10 +269,13 @@ def show_instructions(screen):
                 if event.key == pygame.K_ESCAPE:
                     running = False
         
-        screen.fill((0, 0, 0))
+        screen.blit(background_image, (0, 0))
         for i, line in enumerate(instructions):
-            text = font.render(line, True, (255, 255, 255))
-            screen.blit(text, (screenWidth // 4, 150 + i * 50))
+            text = font.render(line, True, (0, 0, 0))
+             # Căn giữa theo chiều ngang và chiều dọc
+            x_pos = screenWidth // 2 - text.get_width() // 2
+            y_pos = start_y + i * 50  # Vị trí dọc của từng dòng
+            screen.blit(text, (x_pos, y_pos))
         pygame.display.flip()
 
 
