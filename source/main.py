@@ -193,7 +193,7 @@ def draw_cloud():
                 return False
             
 
-def check_collision_with_enemies(drawn_shape, surface_temp, screen):
+def check_collision_with_enemies(drawn_shape, surface_temp, screen, check, rdm):
     img = pygame.surfarray.array3d(surface_temp)
     img = numpy.transpose(img, (1, 0, 2))
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
@@ -206,39 +206,42 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen):
         contour_rect = cv2.boundingRect(contour)
 
         for enemy in enemyList[:]:
-                rdm = random.randint(1, 5)
+                
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
-                    if rdm==1:
-                        enemy.speedup()
+                    if rdm== 1:
+                        if check==0:
+                            enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
-                    if rdm==1:
-                        enemy.speedup()
+                    if rdm== 1:
+                        if check==0:
+                            enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
-                    if rdm==1:
-                        enemy.speedup()
+                    if rdm== 1:
+                        if check==0:
+                            enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 3 and drawn_shape == "v_shape":
-                    if rdm==1:
-                        enemy.speedup()
+                    if rdm== 1:
+                        if check==0:
+                            enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 4 and drawn_shape == "circle":
-                    rdm = random.randint(1, 3)
-                    if rdm==1:
-                        enemy.speedup()
+                    if rdm== 1:
+                        if check==0:
+                            enemy.speedup()
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
-
 
 
 def show_instructions(screen):
@@ -349,6 +352,8 @@ def main():
     selected = None
     speed = 3
     wave = 1
+    check= 0
+    rdm=1
 
     guildface= pygame.Surface((800,600)).convert_alpha()
     guildface.fill((0,0,0,0))
@@ -469,13 +474,12 @@ def main():
             
             # Vẽ nút âm thanh
             sound_button.draw(screen, pygame.mouse.get_pos())
-
             # Kiểm tra hình dạng người dùng đã vẽ và xem có đúng không
             if len(pos_temp) > 10 and not drawing:
                 shape_detected = detect(surface_temp)
 
                 if shape_detected:
-                    check_collision_with_enemies(shape_detected, surface_temp, screen)
+                    check_collision_with_enemies(shape_detected, surface_temp, screen, check, rdm)
                     
                     if shape_detected == "horizontal":
                         pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
@@ -505,22 +509,26 @@ def main():
                         pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
                         shape_correct = True  # Đánh dấu là vẽ đúng
                         font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
+                        text = font.render("Ban da ve hinh tron", 2, (255, 255, 255))
                         guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
 
-                print(alpha)
                 if shape_correct:  
                     if alpha > 0:
-                        alpha = max(0, alpha - 20)
-                        print(alpha)
-                    else: alpha= 255  
+                        alpha = max(0, alpha - 30)
+                    else: alpha= 255
+                    check=1
+                    rdm=1
                 else:
+                    rdm= random.randint(1, 5)
+                    check=0
                     alpha = 255
                     guildface.fill((0,0,0,0)) 
                     pos_temp = []
                     surface_temp = pygame.Surface((800, 600)).convert_alpha() 
 
                 if alpha == 0:
+                    rdm= random.randint(1, 5)
+                    check=0
                     surface_temp = pygame.Surface((800, 600)).convert_alpha() 
                     guildface.fill((0,0,0,0)) 
                     pos_temp = []  # Reset lại pos_temp sau khi vẽ xong
@@ -532,8 +540,6 @@ def main():
             cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
             if draw_cloud()== True:
                 screen.blit(cloud_image, (0, 0))
-                for enemy in enemyList[:]:
-                    enemy.move(frametime)
                     
             # Vẽ thông báo thành tích
             achievement_system.draw_notifications(screen)

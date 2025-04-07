@@ -11,7 +11,7 @@ screenHeight = 600
 #
 squareSize = 50
 # Original upscaled (Frames per second)
-fps = 60
+fps = 30
 
 class SoundManager:
     def __init__(self):
