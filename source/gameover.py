@@ -16,6 +16,10 @@ class GameOver:
         }
         self.initialize_button()
 
+        #Load ảnh
+        self.background_image = pygame.image.load("background/bg_open_meadow.png")
+        self.background_image = pygame.transform.scale(self.background_image, (screenWidth, screenHeight))
+
         # Load âm thanh
         self.loss_sound = pygame.mixer.Sound("sounds/gameover2.wav")
         self.sound_played = False
@@ -26,7 +30,8 @@ class GameOver:
         self.menu_button['rect'] = text_rect
 
     def draw(self, screen, mouse_pos):
-        screen.fill((0, 0, 0))
+        # Vẽ nền
+        screen.blit(self.background_image, (0, 0))
         screen.blit(self.game_over_text, self.title_rect)
         
         color = self.menu_button['hover_color'] if self.menu_button['rect'].collidepoint(mouse_pos) else self.menu_button['color']
