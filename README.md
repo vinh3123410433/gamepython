@@ -1,25 +1,69 @@
-# Balloon Tower Defense 5 Clone (2011, Ninja Kiwi)
+# Tower Defense Game
 
-In the game, players attempt to prevent balloons (referred to as "bloons" in-game) from reaching the end of a set course by placing towers or road items along it that can pop the bloons in a variety of ways, typically by utilizing the power of monkeys. Some towers can stall the bloons and give the other towers more time to pop them by freezing and gluing the bloons. Money is gained by popping bloons, completing levels, and collecting bananas from existing banana farms which can be spent on new towers, upgrades for existing ones, or temporary items such as exploding pineapples and road spikes.
-   
-Original Photo for Reference:
- 
-![image](https://user-images.githubusercontent.com/75475136/116334192-a8d7b880-a789-11eb-9c27-0c524b4d463d.png)
-   
-One of my favourite web browser games growing up, easy to play, contains multiple rounds of balloons (increasingly difficult) that reward cash after it's popped by a tower projectile (Dozens of towers i.e. pure damage to balloons, slow effect, area of effect damage).
-     
-# Space: Begin Round (Important !)
-  
-Pygame Installation
-- https://www.pygame.org/wiki/GettingStarted
-- Make sure you have Python installed
-    
-W: + Speed
+Một game Tower Defense được phát triển bằng Python và Pygame, lấy cảm hứng từ Bloons Tower Defense.
 
-S: - Speed
+## Tính năng chính
 
-https://www.pygame.org/docs/ref/pygame.html
-"pip3 install pygame
-python3 myscript.py"
- 
-Unlimited waves and tower upgrades coming soon!
+- Hệ thống wave quái vật với độ khó tăng dần
+- Hệ thống vẽ hình để tiêu diệt quái vật
+- Hệ thống shop để mua sức khỏe và các power-up
+- Hệ thống thành tích (Achievements)
+- Hệ thống âm thanh và nhạc nền
+- Hệ thống lưu game
+- Hệ thống level và kinh nghiệm
+- Hệ thống thiên thạch (Hail) để hỗ trợ tiêu diệt quái vật
+
+## Cài đặt
+
+1. Cài đặt Python (phiên bản 3.x trở lên)
+2. Cài đặt Pygame:
+```bash
+pip install pygame
+```
+
+## Cách chơi
+
+1. Chạy game:
+```bash
+python source/main.py
+```
+
+2. Điều khiển:
+- SPACE: Bắt đầu wave quái vật
+- W: Tăng tốc độ game
+- S: Giảm tốc độ game
+- H: Mua thiên thạch (chi phí: 2000 tiền)
+- ESC: Quay lại menu
+
+3. Mục tiêu:
+- Tiêu diệt quái vật để nhận tiền
+- Bảo vệ căn cứ không để quái vật đi qua
+- Vẽ hình tương ứng với ký hiệu trên quái vật để tiêu diệt chúng
+- Nâng cấp sức khỏe và mua power-up từ shop
+
+## Hệ thống thành tích
+
+- Tiêu diệt 100 quái vật
+- Sống sót qua 10 wave
+- Đạt level 10
+- Kiếm được 1000 tiền
+
+## Hệ thống shop
+
+- Mua sức khỏe
+- Mua thiên thạch
+- Các power-up khác
+
+## Yêu cầu hệ thống
+
+- Python 3.x
+- Pygame
+- Các thư viện phụ thuộc khác (numpy, cv2)
+
+## Tác giả
+
+Game được phát triển bởi [Tên tác giả]
+
+## Giấy phép
+
+[Loại giấy phép]
