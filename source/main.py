@@ -256,6 +256,7 @@ def show_instructions(screen):
         "- Bao ve can cu khong de ke dich di qua",
         "- Nhan SPACE de bat dau wave quai",
         "- Ve hinh tuong ung voi ky hieu tren quai de tieu diet",
+        "- An H de mua thien thach voi gia 2000 trong tran",
         "",
         "Nhan ESC de quay lai"
     ] 

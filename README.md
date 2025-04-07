@@ -62,8 +62,8 @@ python source/main.py
 
 ## Tác giả
 
-Game được phát triển bởi [Tên tác giả]
+Game được phát triển bởi Vinh, Nhàn, Minh
 
 ## Giấy phép
 
-[Loại giấy phép]
+Giấy phép bản thân tự cấp :))))
