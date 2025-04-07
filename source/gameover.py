@@ -17,7 +17,7 @@ class GameOver:
         self.initialize_button()
 
         # Load âm thanh
-        self.loss_sound = pygame.mixer.Sound("assets/sounds/lose_sound.wav")
+        self.loss_sound = pygame.mixer.Sound("sounds/gameover2.wav")
         self.sound_played = False
 
     def initialize_button(self):
