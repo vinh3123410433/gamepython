@@ -15,8 +15,8 @@ class SaveSystem:
             },
             'shop_items': {
                 'health_1': {'name': 'Tang 1 Mau', 'cost': 1000, 'bought': 0},
-                'health_2': {'name': 'Tang 2 Mau', 'cost': 2000, 'bought': 0},
-                'health_3': {'name': 'Tang 3 Mau', 'cost': 3000, 'bought': 0}
+                'health_2': {'name': 'Tang 2 Mau', 'cost': 1900, 'bought': 0},
+                'health_3': {'name': 'Tang 3 Mau', 'cost': 2700, 'bought': 0}
             },
             'last_save': None
         }
@@ -37,8 +37,11 @@ class SaveSystem:
             json.dump(self.data, f, ensure_ascii=False, indent=4)
 
     def update_money(self, amount):
-        self.data['money'] = amount
-        self.save_data()
+        if isinstance(amount, (int, float)) and amount >= 0:
+            self.data['money'] = amount
+            self.save_data()
+        else:
+            print("Số tiền không hợp lệ")
 
     def get_money(self):
         return self.data['money']

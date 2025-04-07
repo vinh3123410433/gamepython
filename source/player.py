@@ -40,8 +40,11 @@ class Player:
         print(f"Level Up! Bạn đã đạt level {self.level}!")
 
     def update_money(self, amount):
-        self.money = amount
-        self.save_system.update_money(amount)
+        if isinstance(amount, (int, float)) and amount >= 0:
+            self.money = amount
+            self.save_system.update_money(amount)
+        else:
+            print("Số tiền không hợp lệ")
 
     def draw(self, screen):
         # Vẽ player
