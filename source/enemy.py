@@ -62,10 +62,14 @@ class Enemy:
             self.kill()
 
     def speedup(self):
+        print(self.distance, "trc")
+        d1= math.sqrt((self.targets[self.target][0]- self.pos[0]) ** 2 + (self.targets[self.target][1]- self.pos[1]) ** 2)
+        d2= math.sqrt((self.targets[self.target+1][0]- self.targets[self.target][0]) ** 2 + (self.targets[self.target+1][1]- self.targets[self.target][1]) ** 2)
         self.pos= list(self.targets[min (len(self.targets)-1, self.target+ 1)])
         self.target= self.targets.index(tuple(self.pos))
         self.next_target()
-        print(self.target)
+        self.distance= (d1 + d2) + self.distance
+        print(self.distance, "sau")
 
     def hit(self,damage):
         self.player.money+=1
