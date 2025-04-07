@@ -22,12 +22,24 @@ class SoundButton:
         
     def handle_click(self, mouse_pos):
         if self.rect.collidepoint(mouse_pos):
-            sound_manager.music_enabled = not sound_manager.music_enabled
-            if sound_manager.music_enabled:
-                play_music('music/maintheme.mp3')
-            else:
-                stop_music()
-            sound_manager.save_settings()
-            self.update_text()
-            return True
+            try:
+                sound_manager.music_enabled = not sound_manager.music_enabled
+                if sound_manager.music_enabled:
+                    if pygame.mixer.get_init():
+                        play_music('music/maintheme.mp3')
+                    else:
+                        pygame.mixer.init()
+                        play_music('music/maintheme.mp3')
+                else:
+                    if pygame.mixer.get_init():
+                        stop_music()
+                sound_manager.save_settings()
+                self.update_text()
+                return True
+            except Exception as e:
+                print(f"Lỗi khi xử lý âm thanh: {str(e)}")
+                # Khôi phục trạng thái âm thanh về ban đầu
+                sound_manager.music_enabled = not sound_manager.music_enabled
+                self.update_text()
+                return False
         return False 

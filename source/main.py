@@ -52,7 +52,7 @@ def workEvents(selected, wave, speed, pos, drawing, sound_button, pos_temp):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             # Kiểm tra click vào nút âm thanh
             if sound_button.handle_click(pygame.mouse.get_pos()):
-                return selected, wave, speed, pos, drawing
+                return selected, wave, speed, pos, drawing, pos_temp
                 
             drawing = True
             pos= [pygame.mouse.get_pos()]
@@ -94,7 +94,7 @@ def workEvents(selected, wave, speed, pos, drawing, sound_button, pos_temp):
         # if event.type == SPAWN_HAIL:
         #     spawn_hail()
 
-    return selected,wave,speed, pos, drawing, pos_temp
+    return selected, wave, speed, pos, drawing, pos_temp
 
 def spawn_hail():
         for i in range(20):
@@ -281,10 +281,12 @@ def show_instructions(screen):
 
 def main():
     pygame.init()
+    sound_initialized = False
     try:
         pygame.mixer.init()
-    except:
-        print("Không thể khởi tạo âm thanh")
+        sound_initialized = True
+    except Exception as e:
+        print(f"Không thể khởi tạo âm thanh: {str(e)}")
     
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pygame.display.set_caption('Bloons Tower Defence')
@@ -294,6 +296,13 @@ def main():
 
     # Load cài đặt
     sound_manager.load_settings()
+    
+    # Chỉ phát nhạc nếu âm thanh đã được khởi tạo thành công
+    if sound_initialized and sound_manager.music_enabled:
+        try:
+            play_music('music/Ruby_chan1.mp3')
+        except Exception as e:
+            print(f"Không thể phát nhạc: {str(e)}")
 
     # Khởi tạo các hệ thống
     achievement_system = AchievementSystem()
@@ -344,7 +353,6 @@ def main():
     guildface= pygame.Surface((800,600)).convert_alpha()
     guildface.fill((0,0,0,0))
 
-    play_music('music/Ruby_chan1.mp3')
     while True:
         if game_state == "menu":
             for event in pygame.event.get():
