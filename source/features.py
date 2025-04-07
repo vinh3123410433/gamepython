@@ -175,7 +175,7 @@ class ShopSystem:
         
         # Vẽ số máu hiện tại
         current_health = self.save_system.get_total_health()
-        health_text = self.get_font(36).render(f"Mau: {current_health}", True, (255, 0, 0))
+        health_text = self.get_font(36).render(f"Mau: {current_health}", True, (255, 215, 0))
         health_rect = health_text.get_rect(centerx=screen.get_width() // 2, y=150)
         screen.blit(health_text, health_rect)
         
