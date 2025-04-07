@@ -205,7 +205,13 @@ class ShopSystem:
             
             # Vẽ nút mua
             buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 70, 40)
-            pygame.draw.rect(screen, (0, 200, 0), buy_rect)
+            mouse_pos = pygame.mouse.get_pos()
+            
+            if buy_rect.collidepoint(mouse_pos):
+                pygame.draw.rect(screen, (0, 255, 0), buy_rect)  # Hover màu sáng hơn
+            else:
+                pygame.draw.rect(screen, (0, 200, 0), buy_rect)
+
             buy_text = self.get_font(24).render("MUA", True, (255, 255, 255))
             buy_text_rect = buy_text.get_rect(center=buy_rect.center)
             screen.blit(buy_text, buy_text_rect)
