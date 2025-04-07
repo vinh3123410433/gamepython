@@ -63,10 +63,11 @@ class Enemy:
 
     def speedup(self):
         print(self.distance, "trc")
+        pos= min (len(self.targets)-1, self.target+ 1)
         d1= math.sqrt((self.targets[self.target][0]- self.pos[0]) ** 2 + (self.targets[self.target][1]- self.pos[1]) ** 2)
-        d2= math.sqrt((self.targets[self.target+1][0]- self.targets[self.target][0]) ** 2 + (self.targets[self.target+1][1]- self.targets[self.target][1]) ** 2)
-        self.pos= list(self.targets[min (len(self.targets)-1, self.target+ 1)])
-        self.target= self.targets.index(tuple(self.pos))
+        d2= math.sqrt((self.targets[pos][0]- self.targets[self.target][0]) ** 2 + (self.targets[pos][1]- self.targets[self.target][1]) ** 2)
+        self.pos= list(self.targets[pos])
+        self.target= self.targets.index(tuple(self.pos)) 
         self.next_target()
         self.distance= (d1 + d2) + self.distance
         print(self.distance, "sau")
