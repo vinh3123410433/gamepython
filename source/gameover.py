@@ -5,12 +5,12 @@ class GameOver:
     def __init__(self):
         self.font_big = pygame.font.Font(None, 74)
         self.font_small = pygame.font.Font(None, 36)
-        self.game_over_text = self.font_big.render('YOU LOST', True, (255, 0, 0))
+        self.game_over_text = self.font_big.render('YOU LOST', True, (0, 0, 139))
         self.title_rect = self.game_over_text.get_rect(center=(screenWidth // 2, 200))
         
         self.menu_button = {
             'text': 'QUAY LAI MENU',
-            'color': (255, 255, 255),
+            'color': (255, 239, 153),
             'hover_color': (0, 255, 0),
             'rect': None
         }
