@@ -26,7 +26,7 @@ class GameOver:
 
     def initialize_button(self):
         text_surface = self.font_small.render(self.menu_button['text'], True, self.menu_button['color'])
-        text_rect = text_surface.get_rect(center=(screenWidth // 2, 300))
+        text_rect = text_surface.get_rect(center=(screenWidth // 2, screenHeight - 50))
         self.menu_button['rect'] = text_rect
 
     def draw(self, screen, mouse_pos):
