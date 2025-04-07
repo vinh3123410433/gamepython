@@ -28,7 +28,7 @@ class Enemy:
         self.distance = 0
         self.shape_type = random.randint(1, 4)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        self.event = 2
+        self.event = random.randint(0, 10)
         self.start = 0 
         enemyList.append(self)
 

@@ -515,7 +515,7 @@ def main():
 
                 if shape_correct:  
                     if alpha > 0:
-                        alpha = max(0, alpha - 30)
+                        alpha = max(0, alpha - 80)
                     else: alpha= 255
                     check=1
                     rdm=1
