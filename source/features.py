@@ -173,6 +173,12 @@ class ShopSystem:
         money_rect = money_text.get_rect(centerx=screen.get_width() // 2, y=100)
         screen.blit(money_text, money_rect)
         
+        # Vẽ số máu hiện tại
+        current_health = self.save_system.get_total_health()
+        health_text = self.get_font(36).render(f"Mau: {current_health}", True, (255, 0, 0))
+        health_rect = health_text.get_rect(centerx=screen.get_width() // 2, y=150)
+        screen.blit(health_text, health_rect)
+        
         # Vẽ hướng dẫn
         guide_text = self.get_font(24).render("Nhan ESC de quay lai menu", True, (200, 200, 200))
         guide_rect = guide_text.get_rect(centerx=screen.get_width() // 2, y=screen.get_height() - 50)
