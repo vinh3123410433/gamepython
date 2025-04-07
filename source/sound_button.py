@@ -8,7 +8,7 @@ class SoundButton:
         self.update_text()
         
     def update_text(self):
-        self.text = self.font.render('AM THANH: BAT' if sound_manager.music_enabled else 'AM THANH: TAT', True, (255, 255, 255))
+        self.text = self.font.render('MUSIC: ON' if sound_manager.music_enabled else 'MUSIC: OFF', True, (255, 255, 255))
         self.text_rect = self.text.get_rect(center=self.rect.center)
         
     def draw(self, screen, mouse_pos):
