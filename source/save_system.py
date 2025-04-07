@@ -15,8 +15,8 @@ class SaveSystem:
             },
             'shop_items': {
                 'health_1': {'name': 'Tang 1 Mau', 'cost': 1000, 'bought': 0},
-                'health_2': {'name': 'Tang 2 Mau', 'cost': 2550, 'bought': 0},
-                'health_3': {'name': 'Tang 3 Mau', 'cost': 5500, 'bought': 0}
+                'health_2': {'name': 'Tang 2 Mau', 'cost': 2000, 'bought': 0},
+                'health_3': {'name': 'Tang 3 Mau', 'cost': 3000, 'bought': 0}
             },
             'last_save': None
         }
