@@ -1,5 +1,5 @@
 {
-    "money": 94248,
+    "money": 45345,
     "achievements": {
         "kill_100": {
             "name": "SAT THU",
@@ -26,18 +26,18 @@
         "health_1": {
             "name": "Tang 1 Mau",
             "cost": 1,
-            "bought": 0
+            "bought": 3
         },
         "health_2": {
             "name": "Tang 2 Mau",
             "cost": 1900,
-            "bought": 0
+            "bought": 3
         },
         "health_3": {
             "name": "Tang 3 Mau",
             "cost": 2700,
-            "bought": 0
+            "bought": 16
         }
     },
-    "last_save": "2025-04-08T14:28:00.384777"
+    "last_save": "2025-04-09T01:24:57.542640"
 }
