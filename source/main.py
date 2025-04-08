@@ -210,35 +210,59 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen, check, rdm):
                 if enemy.shape_type == 0 and drawn_shape == "horizontal":
                     if rdm== 1:
                         if check==0:
-                            enemy.speedup()
+                            if enemy.tele== 0:
+                                enemy.speedup()
+                                enemy.tele= 1
+                            else: 
+                                enemy.nextLayer()
+                                if enemy.layer> -1: enemy.draw_health_bar(screen)
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 1 and drawn_shape == "vertical":
                     if rdm== 1:
                         if check==0:
-                            enemy.speedup()
+                            if enemy.tele== 0:
+                                enemy.speedup()
+                                enemy.tele= 1
+                            else: 
+                                enemy.nextLayer()
+                                if enemy.layer> -1: enemy.draw_health_bar(screen)
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
                     if rdm== 1:
                         if check==0:
-                            enemy.speedup()
+                            if enemy.tele== 0:
+                                enemy.speedup()
+                                enemy.tele= 1
+                            else: 
+                                enemy.nextLayer()
+                                if enemy.layer> -1: enemy.draw_health_bar(screen)
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 3 and drawn_shape == "v_shape":
                     if rdm== 1:
                         if check==0:
-                            enemy.speedup()
+                            if enemy.tele== 0:
+                                enemy.speedup()
+                                enemy.tele= 1
+                            else: 
+                                enemy.nextLayer()
+                                if enemy.layer> -1: enemy.draw_health_bar(screen)
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)
                 elif enemy.shape_type == 4 and drawn_shape == "circle":
                     if rdm== 1:
                         if check==0:
-                            enemy.speedup()
+                            if enemy.tele== 0:
+                                enemy.speedup()
+                            else: 
+                                enemy.nextLayer()
+                                if enemy.layer> -1: enemy.draw_health_bar(screen)
                     else:
                         enemy.nextLayer()
                         if enemy.layer> -1: enemy.draw_health_bar(screen)

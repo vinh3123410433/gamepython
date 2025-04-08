@@ -30,6 +30,7 @@ class Enemy:
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         self.event = random.randint(0, 10)
         self.start = 0 
+        self.tele= 0
         enemyList.append(self)
 
     def setLayer(self): 
