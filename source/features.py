@@ -23,7 +23,7 @@ class AchievementSystem:
         current_time = pygame.time.get_ticks()
         
         # Kiểm tra và cập nhật thành tích
-        if not self.achievements['kill_100']['unlocked'] and player.score >= 1000:
+        if not self.achievements['kill_100']['unlocked'] and player.kills >= 10:
             self.unlock_achievement('kill_100')
         if not self.achievements['survive_10']['unlocked'] and player.wave >= 10:
             self.unlock_achievement('survive_10')
