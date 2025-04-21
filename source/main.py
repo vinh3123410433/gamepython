@@ -328,7 +328,7 @@ def main():
     # Chỉ phát nhạc nếu âm thanh đã được khởi tạo thành công
     if sound_initialized and sound_manager.music_enabled:
         try:
-            play_music('music/Ruby_chan1.mp3')
+            play_music('music/maintheme.mp3')
         except Exception as e:
             print(f"Không thể phát nhạc: {str(e)}")
 
