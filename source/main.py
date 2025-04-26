@@ -378,7 +378,7 @@ def main():
     speed = 3
     wave = 1
     check= 0
-    rdm=1
+    rdm=0
 
     guildface= pygame.Surface((800,600)).convert_alpha()
     guildface.fill((0,0,0,0))
@@ -542,7 +542,6 @@ def main():
                         alpha = max(0, alpha - 80)
                     else: alpha= 255
                     check=1
-                    rdm=1
                 else:
                     rdm= random.randint(1, 5)
                     check=0
@@ -552,7 +551,7 @@ def main():
                     surface_temp = pygame.Surface((800, 600)).convert_alpha() 
 
                 if alpha == 0:
-                    rdm= random.randint(1, 5)
+                    rdm= random.randint(1, 10)
                     check=0
                     surface_temp = pygame.Surface((800, 600)).convert_alpha() 
                     guildface.fill((0,0,0,0)) 

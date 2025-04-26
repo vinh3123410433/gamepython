@@ -26,7 +26,7 @@ class Enemy:
         self.next_target()
         self.rect = self.image.get_rect(center=self.pos)
         self.distance = 0
-        self.shape_type = random.randint(1, 4)
+        self.shape_type = random.randint(0, 3)
         self.shape_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
         self.event = random.randint(0, 10)
         self.start = 0 
@@ -63,14 +63,14 @@ class Enemy:
             self.kill()
 
     def speedup(self):
-        print(self.distance, "trc")
-        pos= min (len(self.targets)-1, self.target+ 1)
-        d1= math.sqrt((self.targets[self.target][0]- self.pos[0]) ** 2 + (self.targets[self.target][1]- self.pos[1]) ** 2)
-        d2= math.sqrt((self.targets[pos][0]- self.targets[self.target][0]) ** 2 + (self.targets[pos][1]- self.targets[self.target][1]) ** 2)
-        self.pos= list(self.targets[pos])
-        self.target= self.targets.index(tuple(self.pos)) 
-        self.next_target()
-        self.distance= (d1 + d2) + self.distance
+        # pos= min (len(self.targets)-1, self.target+ 1)
+        # d1= math.sqrt((self.targets[self.target][0]- self.pos[0]) ** 2 + (self.targets[self.target][1]- self.pos[1]) ** 2)
+        # d2= math.sqrt((self.targets[pos][0]- self.targets[self.target][0]) ** 2 + (self.targets[pos][1]- self.targets[self.target][1]) ** 2)
+        # self.pos= list(self.targets[pos])
+        # self.target= self.targets.index(tuple(self.pos)) 
+        # self.next_target()
+        # self.distance= (d1 + d2) + self.distance
+        self.speed +=1
         print(self.distance, "sau")
 
     def hit(self,damage):
