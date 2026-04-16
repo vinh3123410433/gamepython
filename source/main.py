@@ -136,7 +136,7 @@ def detect(surface_temp):
             circle_area = math.pi * (radius ** 2)
             contour_area = cv2.contourArea(contour)
             circularity = (4 * math.pi * contour_area) / (contour_area ** 2)
-            angle = math.degrees(math.atan2(vy, vx))
+            angle = math.degrees(math.atan2(vy.item(), vx.item()))
             
             if (-20 <= angle <= 20) or (160 <= angle <= 200):
                 if w > h * 2:
