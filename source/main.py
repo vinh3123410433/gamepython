@@ -8,16 +8,15 @@ from sender import Sender
 from menu import Menu
 from gameover import GameOver
 from explosion import Explosion
-from achievements import AchievementSystem  # Thêm import
+from achievements import AchievementSystem
 from features import ShopSystem
 from save_system import SaveSystem
 from hail import Hail
-from sound_button import SoundButton  # Thêm import
-
+from sound_button import SoundButton
+from hud import GameplayHUD, PauseModal, TutorialScreen
 
 player = Player()
 mapvar = Map()
-# store images using a dictionary 
 EnemyImageArray = dict()
 
 def buy_hail():
@@ -26,39 +25,60 @@ def buy_hail():
         player.money -= hail_cost
         player.save_system.update_money(player.money)  # Lưu tiền sau khi mua
         spawn_hail()
+        try:
+            play_sound('sounds/buy.mp3', 0.4)
+        except Exception:
+            pass
         return True
     return False
 
-def dispText(screen,wavenum):
-    font = pygame.font.SysFont('arial', 18)
-    h = font.get_height()+2
-    strings = [
-        ('Round: %d/%d' % (wavenum,len(mapvar.waves)),(200,20)),
-        (str(player.money),(730,15)),
-        (str(max(player.health,0)),(730,45)),
-        ('Score: %d' % player.score,(200,45)),
-        ('Level: %d' % player.level,(200,70)),
-        ('EXP: %d/%d' % (player.exp, player.exp_to_next_level),(200,95))
-    ]
-    for string,pos in strings:
-        text = font.render(string,2,(0,0,0))
-        screen.blit(text,text.get_rect(midleft=pos))
+def workEvents(selected, wave, speed, pos, drawing, pos_temp, hud):
+    action = None
+    mpos = pygame.mouse.get_pos()
 
-def workEvents(selected, wave, speed, pos, drawing, sound_button, pos_temp):
-    buy= False
     for event in pygame.event.get():
-        if event.type == pygame.QUIT: pygame.quit(); sys.exit()
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 3: selected = None
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+            selected = None
+
+        # Check HUD buttons on all mouse events (press-down and release click)
+        if hud.btn_pause.handle_event(event):
+            return selected, wave, speed, pos, drawing, pos_temp, 'pause'
+
+        if hud.btn_sound.handle_event(event):
+            sound_manager.toggle_music()
+            hud.btn_sound.icon = "sound_on" if sound_manager.music_enabled else "sound_off"
+            return selected, wave, speed, pos, drawing, pos_temp, None
+
+        if hud.btn_speed_down.handle_event(event):
+            speed = max(1, speed - 1)
+            return selected, wave, speed, pos, drawing, pos_temp, None
+
+        if hud.btn_speed_up.handle_event(event):
+            speed = min(10, speed + 1)
+            return selected, wave, speed, pos, drawing, pos_temp, None
+
+        if hud.btn_hail.handle_event(event):
+            if buy_hail():
+                hud.show_feedback("horizontal")  # visual cue
+            return selected, wave, speed, pos, drawing, pos_temp, None
+
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            # Kiểm tra click vào nút âm thanh
-            if sound_button.handle_click(pygame.mouse.get_pos()):
-                return selected, wave, speed, pos, drawing, pos_temp
-                
+
+            # Do not start drawing if clicking inside top HUD bar or bottom dock
+            top_bar_rect = pygame.Rect(8, 8, screenWidth - 16, 44)
+            dock_rect = pygame.Rect(screenWidth - 270, screenHeight - 54, 262, 46)
+            if top_bar_rect.collidepoint(mpos) or dock_rect.collidepoint(mpos):
+                return selected, wave, speed, pos, drawing, pos_temp, None
+
+            # Start drawing gesture
             drawing = True
-            pos= [pygame.mouse.get_pos()]
-            pos.append(pygame.mouse.get_pos())
-        if event.type == pygame.MOUSEMOTION and drawing == True:
-            mpos = pygame.mouse.get_pos()
+            pos = [mpos, mpos]
+
+        if event.type == pygame.MOUSEMOTION and drawing:
             if len(pos) > 0:
                 last_pos = pos[-1]
                 dx = mpos[0] - last_pos[0]
@@ -69,46 +89,44 @@ def workEvents(selected, wave, speed, pos, drawing, sound_button, pos_temp):
                     y = last_pos[1] + dy * i / dist
                     pos.append((int(x), int(y)))
                     pos_temp.append((int(x), int(y)))
+
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             drawing = False
-            pos=[]
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE and not enemyList:
-                if wave<=len(mapvar.waves): Sender(wave, player, mapvar)
-                else: print('Congratulations!! You survived the swarm')
-            if event.key == pygame.K_w and speed<10: speed+=1
-            if event.key == pygame.K_s and speed>1: speed-=1
-            if event.key == pygame.K_h and buy == False:  # Thêm phím tắt H để mua thiên thạch
-                buy = True
-            if event.key == pygame.K_h and buy== True:
-                if buy_hail():
-                    buy = True
-                    print("Da mua thien thach thanh cong!")
-                    try:
-                        play_sound('sounds/buy.mp3', 0.3)
-                    except:
-                        print("Khong tim thay file am thanh")
-                else:
-                    print("Khong du tien de mua thien thach!")
-        
-        # if event.type == SPAWN_HAIL:
-        #     spawn_hail()
+            pos = []
 
-    return selected, wave, speed, pos, drawing, pos_temp
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                action = 'pause'
+            elif event.key == pygame.K_SPACE and not enemyList:
+                if wave <= len(mapvar.waves):
+                    Sender(wave, player, mapvar)
+                    try:
+                        play_sound('sounds/place tower.mp3', 0.4)
+                    except Exception:
+                        pass
+                else:
+                    action = 'victory'
+            elif event.key == pygame.K_w and speed < 10:
+                speed += 1
+            elif event.key == pygame.K_s and speed > 1:
+                speed -= 1
+            elif event.key == pygame.K_h:
+                buy_hail()
+
+    return selected, wave, speed, pos, drawing, pos_temp, action
 
 def spawn_hail():
-        for i in range(20):
-            pos = (random.randint(0, screenWidth), random.randint(0, screenHeight))
-            hail = Hail(pos[0], pos[1])
-            hailList.append(hail)
+    for i in range(20):
+        pos = (random.randint(0, screenWidth), random.randint(0, screenHeight))
+        hail = Hail(pos[0], pos[1])
+        hailList.append(hail)
 
-        # Phát âm thanh khi hỏa cầu xuất hiện
-        try:
-            play_sound('sounds/Fire.wav', 1 )
-        except:
-            print("Không tìm thấy file âm thanh ")
+    try:
+        play_sound('sounds/Fire.wav', 0.8)
+    except Exception:
+        pass
 
-SPAWN_HAIL= pygame.USEREVENT + 1
+SPAWN_HAIL = pygame.USEREVENT + 1
 
 def detect(surface_temp):
     img = pygame.surfarray.array3d(surface_temp)
@@ -117,7 +135,7 @@ def detect(surface_temp):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 30, 255, cv2.THRESH_BINARY)
     
-    kernel = numpy.ones((5,5), numpy.uint8)
+    kernel = numpy.ones((5, 5), numpy.uint8)
     thresh = cv2.dilate(thresh, kernel, iterations=1)
     
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -135,7 +153,6 @@ def detect(surface_temp):
             (a, b), radius = cv2.minEnclosingCircle(contour)
             circle_area = math.pi * (radius ** 2)
             contour_area = cv2.contourArea(contour)
-            circularity = (4 * math.pi * contour_area) / (contour_area ** 2)
             angle = math.degrees(math.atan2(vy.item(), vx.item()))
             
             if (-20 <= angle <= 20) or (160 <= angle <= 200):
@@ -168,30 +185,39 @@ def event_enemy(screen):
             if enemy.start == 0:
                 enemy.start = pygame.time.get_ticks()
 
-            current= pygame.time.get_ticks()
-            countdown= (current- enemy.start) // 1000
-            num= max(0, 5- countdown)
-            font= pygame.font.SysFont("Arial", 20, bold=True)
-            text= font.render(str(num), 2, (0, 0, 0))
-            text_rect = text.get_rect(center=enemy.rect.center)
-            screen.blit(text, text_rect)
+            current = pygame.time.get_ticks()
+            countdown = (current - enemy.start) // 1000
+            num = max(0, 5 - countdown)
 
-            if num==0: 
-                startList. append(pygame.time.get_ticks())
+            # Modern sleek countdown badge
+            badge_r = 13
+            badge_pos = (enemy.rect.centerx, enemy.rect.top - 28)
+            surf = pygame.Surface((badge_r * 2, badge_r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(surf, (220, 38, 38, 230), (badge_r, badge_r), badge_r)
+            pygame.draw.circle(surf, (255, 255, 255), (badge_r, badge_r), badge_r, width=1)
+            screen.blit(surf, (badge_pos[0] - badge_r, badge_pos[1] - badge_r))
+
+            font = pygame.font.SysFont("Arial", 14, bold=True)
+            text = font.render(str(num), True, (255, 255, 255))
+            screen.blit(text, text.get_rect(center=badge_pos))
+
+            if num == 0: 
+                startList.append(pygame.time.get_ticks())
                 enemy.kill()
 
 def draw_cloud():
-        if len(startList) > 0:
-            e= startList[0]
-            current = pygame.time.get_ticks()
-            countdown = max (0, (current - startList[0]) // 1000)  
-            if len(startList) > 1 and startList[1] - e < 2300: startList[1]= e
-            if countdown < 3: 
-                return True
-            else: 
-                startList.remove(e)
-                return False
-            
+    if len(startList) > 0:
+        e = startList[0]
+        current = pygame.time.get_ticks()
+        countdown = max(0, (current - startList[0]) // 1000)  
+        if len(startList) > 1 and startList[1] - e < 2300: 
+            startList[1] = e
+        if countdown < 3: 
+            return True
+        else: 
+            startList.remove(e)
+            return False
+    return False
 
 def check_collision_with_enemies(drawn_shape, surface_temp, screen, check, rdm):
     img = pygame.surfarray.array3d(surface_temp)
@@ -202,110 +228,66 @@ def check_collision_with_enemies(drawn_shape, surface_temp, screen, check, rdm):
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if len(contours) > 0:
-        contour = max(contours, key=cv2.contourArea)
-        contour_rect = cv2.boundingRect(contour)
-
         for enemy in enemyList[:]:
-                
-                if enemy.shape_type == 0 and drawn_shape == "horizontal":
-                    if rdm== 1:
-                        if check==0:
-                            if enemy.tele== 0:
-                                enemy.speedup()
-                                enemy.tele= 1
-                            else: 
-                                enemy.nextLayer()
-                                if enemy.layer> -1: enemy.draw_health_bar(screen)
-                    else:
-                        enemy.nextLayer()
-                        if enemy.layer> -1: enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 1 and drawn_shape == "vertical":
-                    if rdm== 1:
-                        if check==0:
-                            if enemy.tele== 0:
-                                enemy.speedup()
-                                enemy.tele= 1
-                            else: 
-                                enemy.nextLayer()
-                                if enemy.layer> -1: enemy.draw_health_bar(screen)
-                    else:
-                        enemy.nextLayer()
-                        if enemy.layer> -1: enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
-                    if rdm== 1:
-                        if check==0:
-                            if enemy.tele== 0:
-                                enemy.speedup()
-                                enemy.tele= 1
-                            else: 
-                                enemy.nextLayer()
-                                if enemy.layer> -1: enemy.draw_health_bar(screen)
-                    else:
-                        enemy.nextLayer()
-                        if enemy.layer> -1: enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 3 and drawn_shape == "v_shape":
-                    if rdm== 1:
-                        if check==0:
-                            if enemy.tele== 0:
-                                enemy.speedup()
-                                enemy.tele= 1
-                            else: 
-                                enemy.nextLayer()
-                                if enemy.layer> -1: enemy.draw_health_bar(screen)
-                    else:
-                        enemy.nextLayer()
-                        if enemy.layer> -1: enemy.draw_health_bar(screen)
-                elif enemy.shape_type == 4 and drawn_shape == "circle":
-                    if rdm== 1:
-                        if check==0:
-                            if enemy.tele== 0:
-                                enemy.speedup()
-                            else: 
-                                enemy.nextLayer()
-                                if enemy.layer> -1: enemy.draw_health_bar(screen)
-                    else:
-                        enemy.nextLayer()
-                        if enemy.layer> -1: enemy.draw_health_bar(screen)
-
-
-def show_instructions(screen):
-    running = True
-    font = pygame.font.Font(None, 36)
-    background_image = pygame.image.load('background/Paper.jpg') 
-    background_image = pygame.transform.scale(background_image, (screenWidth, screenHeight))
-    screen.blit(background_image, (0, 0))
-    instructions = [
-        "HUONG DAN CHOI:",
-        "- Tieu diet ke dich de nhan tien",
-        "- Bao ve can cu khong de ke dich di qua",
-        "- Nhan SPACE de bat dau wave quai",
-        "- Ve hinh tuong ung voi ky hieu tren quai de tieu diet",
-        "- An H de mua thien thach voi gia 2000 trong tran",
-        "",
-        "Nhan ESC de quay lai"
-    ] 
-    # Tính toán vị trí bắt đầu cho các dòng hướng dẫn
-    total_height = len(instructions) * 50  # Khoảng cách giữa các dòng là 50
-    start_y = (screenHeight - total_height) // 2  # Vị trí bắt đầu theo chiều dọc
-    
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-        
-        screen.blit(background_image, (0, 0))
-        for i, line in enumerate(instructions):
-            text = font.render(line, True, (0, 0, 0))
-             # Căn giữa theo chiều ngang và chiều dọc
-            x_pos = screenWidth // 2 - text.get_width() // 2
-            y_pos = start_y + i * 50  # Vị trí dọc của từng dòng
-            screen.blit(text, (x_pos, y_pos))
-        pygame.display.flip()
-
+            if enemy.shape_type == 0 and drawn_shape == "horizontal":
+                if rdm == 1:
+                    if check == 0:
+                        if enemy.tele == 0:
+                            enemy.speedup()
+                            enemy.tele = 1
+                        else: 
+                            enemy.nextLayer()
+                            if enemy.layer > -1: enemy.draw_health_bar(screen)
+                else:
+                    enemy.nextLayer()
+                    if enemy.layer > -1: enemy.draw_health_bar(screen)
+            elif enemy.shape_type == 1 and drawn_shape == "vertical":
+                if rdm == 1:
+                    if check == 0:
+                        if enemy.tele == 0:
+                            enemy.speedup()
+                            enemy.tele = 1
+                        else: 
+                            enemy.nextLayer()
+                            if enemy.layer > -1: enemy.draw_health_bar(screen)
+                else:
+                    enemy.nextLayer()
+                    if enemy.layer > -1: enemy.draw_health_bar(screen)
+            elif enemy.shape_type == 2 and drawn_shape == "diagonal_right":
+                if rdm == 1:
+                    if check == 0:
+                        if enemy.tele == 0:
+                            enemy.speedup()
+                            enemy.tele = 1
+                        else: 
+                            enemy.nextLayer()
+                            if enemy.layer > -1: enemy.draw_health_bar(screen)
+                else:
+                    enemy.nextLayer()
+                    if enemy.layer > -1: enemy.draw_health_bar(screen)
+            elif enemy.shape_type == 3 and drawn_shape == "v_shape":
+                if rdm == 1:
+                    if check == 0:
+                        if enemy.tele == 0:
+                            enemy.speedup()
+                            enemy.tele = 1
+                        else: 
+                            enemy.nextLayer()
+                            if enemy.layer > -1: enemy.draw_health_bar(screen)
+                else:
+                    enemy.nextLayer()
+                    if enemy.layer > -1: enemy.draw_health_bar(screen)
+            elif enemy.shape_type == 4 and drawn_shape == "circle":
+                if rdm == 1:
+                    if check == 0:
+                        if enemy.tele == 0:
+                            enemy.speedup()
+                        else: 
+                            enemy.nextLayer()
+                            if enemy.layer > -1: enemy.draw_health_bar(screen)
+                else:
+                    enemy.nextLayer()
+                    if enemy.layer > -1: enemy.draw_health_bar(screen)
 
 def main():
     pygame.init()
@@ -317,15 +299,13 @@ def main():
         print(f"Không thể khởi tạo âm thanh: {str(e)}")
     
     os.environ['SDL_VIDEO_CENTERED'] = '1'
-    pygame.display.set_caption('Bloons Tower Defence')
-    screen = pygame.display.set_mode((screenWidth,screenHeight))
+    pygame.display.set_caption('Tower Defense: Spell Rush - Modern Edition')
+    screen = pygame.display.set_mode((screenWidth, screenHeight))
     clock = pygame.time.Clock()
-    font = pygame.font.Font(None,20)
 
-    # Load cài đặt
+    # Load cài đặt âm thanh
     sound_manager.load_settings()
     
-    # Chỉ phát nhạc nếu âm thanh đã được khởi tạo thành công
     if sound_initialized and sound_manager.music_enabled:
         try:
             play_music('music/Ruby_chan1.mp3')
@@ -336,254 +316,278 @@ def main():
     achievement_system = AchievementSystem()
     shop_system = ShopSystem()
     
-    # Khởi tạo nút âm thanh - đặt ở góc trái trên
-    sound_button = SoundButton(10, 10, 140, 40)
-    
-    # Khởi tạo player sau khi pygame đã được khởi tạo
+    # Khởi tạo player
     global player
     player = Player()
     
-    # Add this line to load enemy images
+    # Load enemy images
     loadImages()
-    
     mapvar.getmovelist()
 
-    drawing= False
-    pos=[]
-    spawn= pygame.time.get_ticks()
+    # UI Components
+    menu = Menu(player)
+    game_over = GameOver()
+    hud = GameplayHUD()
+    pause_modal = PauseModal()
+    tutorial_screen = TutorialScreen()
+
+    game_state = "menu"
+    drawing = False
+    pos = []
+    spawn = pygame.time.get_ticks()
     index_to_draw = 0
 
     shape_correct = False
-    menu = Menu(player)
-    game_over = GameOver()
-    game_state = "menu"
-    alpha= 255
-    pos_temp=[]
-    surface_temp= pygame.Surface((800,600)).convert_alpha()
-    surface_temp.fill((0,0,0,0))
-    draw_time= pygame.time.get_ticks()
+    pos_temp = []
+    surface_temp = pygame.Surface((screenWidth, screenHeight)).convert_alpha()
+    surface_temp.fill((0, 0, 0, 0))
 
-    background = pygame.Surface((800,600)); background.set_colorkey((0,0,0))
-    heart,money,plank = imgLoad('images/hearts.png'),imgLoad('images/moneySign.png'),imgLoad('images/plankBlank.png')
-    w,h = plank.get_size()
-    for y in range(screenHeight//h): background.blit(plank,(screenWidth-w,y*h))
-    for y in range(3):
-        for x in range(screenWidth//w): background.blit(plank,(x*w,screenHeight-(y+1)*h))
-    background.blit(money,(screenWidth-w+6,h//2-money.get_height()//2))
-    background.blit(heart,(screenWidth-w+6,h+h//2-heart.get_height()//2))
-    
-    level_img,t1,t2 = mapvar.get_background()
+    level_img, t1, t2 = mapvar.get_background()
 
     selected = None
     speed = 3
     wave = 1
-    check= 0
-    rdm=0
+    check = 0
+    rdm = 0
+    z0, z1 = [], []
 
-    guildface= pygame.Surface((800,600)).convert_alpha()
-    guildface.fill((0,0,0,0))
+    cloud_image = pygame.image.load("images/mud.png")
+    cloud_image = pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
 
     while True:
+        mpos = pygame.mouse.get_pos()
+
+        # ======================================================================
+        # STATE: MAIN MENU
+        # ======================================================================
         if game_state == "menu":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    button_clicked = menu.handle_click(event.pos)
-                    if button_clicked == 0:
-                        game_state = "game"
-                    elif button_clicked == 1:
-                        # Cập nhật tiền trước khi vào shop
-                        player.money = player.save_system.get_money()
-                        game_state = "shop"
-                    elif button_clicked == 2:
-                        game_state = "instructions"
-                    elif button_clicked == 'quit':  # Xử lý nút thoát
-                        pygame.quit()
-                        sys.exit()
 
-            menu.draw(screen, pygame.mouse.get_pos())
+                btn_res = menu.handle_event(event)
+                if btn_res == 0:
+                    game_state = "game"
+                elif btn_res == 1:
+                    player.money = player.save_system.get_money()
+                    game_state = "shop"
+                elif btn_res == 2:
+                    game_state = "instructions"
+                elif btn_res == 'quit':
+                    pygame.quit()
+                    sys.exit()
+
+            menu.draw(screen, mpos)
             pygame.display.flip()
             clock.tick(fps)
 
+        # ======================================================================
+        # STATE: SHOP
+        # ======================================================================
         elif game_state == "shop":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        game_state = "menu"
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()
-                    y_offset = 200
-                    for item_id, item in shop_system.items.items():
-                        item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
-                        buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 80, 40)
-                        
-                        if buy_rect.collidepoint(mouse_pos):
-                            if player.money >= item['cost']:
-                                if shop_system.buy_item(item_id, player):
-                                    try:
-                                        play_sound('sounds/buy.mp3', 0.3)
-                                    except:
-                                        print("Khong tim thay file am thanh")
-                                    print(f"Da mua {item['name']}")
-                            else:
-                                print("Khong du tien de mua!")
-                        y_offset += 100
 
-            screen.fill((0, 0, 0))
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    game_state = "menu"
+
+                act = shop_system.handle_event(event, player)
+                if act == 'back':
+                    game_state = "menu"
+                    continue
+
             shop_system.draw_shop(screen)
             pygame.display.flip()
             clock.tick(fps)
 
+        # ======================================================================
+        # STATE: INSTRUCTIONS / TUTORIAL
+        # ======================================================================
         elif game_state == "instructions":
-            show_instructions(screen)
-            game_state = "menu"
-        elif game_state == "game":
-            starttime = time.time()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                act = tutorial_screen.handle_event(event)
+                if act == 'back':
+                    game_state = "menu"
+
+            tutorial_screen.draw(screen, mpos)
+            pygame.display.flip()
             clock.tick(fps)
-            # frametime = (time.time()-starttime)*speed #thời gian thực giữa 2 khung hình
-            frametime = 1/fps*speed #thời gian cố định giữa 2 khu
-            # Kiểm tra health = 0
+
+        # ======================================================================
+        # STATE: PAUSED
+        # ======================================================================
+        elif game_state == "paused":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                act = pause_modal.handle_event(event)
+                if act == 'resume':
+                    game_state = "game"
+                elif act == 'restart':
+                    # Reset current wave combat
+                    enemyList.clear()
+                    bulletList.clear()
+                    iconList.clear()
+                    senderList.clear()
+                    startList.clear()
+                    hailList.clear()
+                    explosionList.clear()
+                    game_state = "game"
+                elif act == 'menu':
+                    enemyList.clear()
+                    bulletList.clear()
+                    iconList.clear()
+                    senderList.clear()
+                    startList.clear()
+                    hailList.clear()
+                    explosionList.clear()
+                    game_state = "menu"
+
+            # Render frozen gameplay under pause overlay
+            screen.blit(level_img, (0, 0))
+            for enemy in z0:
+                screen.blit(enemy.image, enemy.rect)
+                enemy.draw_health_bar(screen)
+            screen.blit(t1, (0, 0))
+            screen.blit(t2, (0, 0))
+            for enemy in z1:
+                screen.blit(enemy.image, enemy.rect)
+                enemy.draw_health_bar(screen)
+            hud.draw(screen, player, wave, len(mapvar.waves), speed, False, mpos)
+            pause_modal.draw(screen, mpos, player, wave)
+            pygame.display.flip()
+            clock.tick(fps)
+
+        # ======================================================================
+        # STATE: ACTIVE GAMEPLAY
+        # ======================================================================
+        elif game_state == "game":
+            clock.tick(fps)
+            frametime = 1 / fps * speed
+
+            # Check Game Over (Health depleted)
             if player.health <= 0:
+                game_over.reset_sound(is_victory=False)
                 game_state = "game_over"
                 continue
-                
-            screen.blit(level_img,(0,0))
-            mpos = pygame.mouse.get_pos()
 
-            if senderList: 
-                wave = senderList[0].update(frametime,wave)
-                player.wave = wave  # Cập nhật wave cho player
+            # Draw level background
+            screen.blit(level_img, (0, 0))
 
-            # Kiểm tra thành tích
+            # Update wave senders
+            if senderList:
+                wave = senderList[0].update(frametime, wave)
+                player.wave = wave
+
+            # Check Victory (Surviving all waves)
+            if wave > len(mapvar.waves) and not enemyList and not senderList:
+                game_over.reset_sound(is_victory=True)
+                game_state = "game_over"
+                continue
+
+            # Check achievements & save money
             achievement_system.check_achievements(player)
-
-            # Cập nhật tiền
             player.update_money(player.money)
 
-            z0,z1 = [],[]
+            # Sort enemies by depth/distance along path
+            z0, z1 = [], []
             for enemy in enemyList:
                 d = enemy.distance
-                if d> 790 and d<960: z0.append(enemy)
-                elif d> 2420 and d< 2650: z0.append(enemy)
-                else: z1.append(enemy)
+                if (915 < d < 1115) or (2800 < d < 3065):
+                    z0.append(enemy)
+                else:
+                    z1.append(enemy)
 
             for enemy in z0:
                 enemy.move(frametime)
-                screen.blit(enemy.image,enemy.rect)
+                screen.blit(enemy.image, enemy.rect)
                 enemy.draw_health_bar(screen)
-                screen.blit(t1,(0,0))
-                screen.blit(t2,(0,0))
-            for enemy in z1: 
+
+            screen.blit(t1, (0, 0))
+            screen.blit(t2, (0, 0))
+
+            for enemy in z1:
                 enemy.move(frametime)
-                screen.blit(enemy.image,enemy.rect)
+                screen.blit(enemy.image, enemy.rect)
                 enemy.draw_health_bar(screen)
 
-            screen.blit(background,(0,0))
-            selected,wave,speed, pos, drawing, pos_temp = workEvents(selected,wave,speed, pos, drawing, sound_button, pos_temp)
-            
-            if len(pos_temp) > 2:
-                if drawing:
-                    # Vẽ đường khi người dùng đang vẽ
-                    pygame.draw.lines(guildface, (22, 62, 80), False, pos, 8)
-                    screen.blit(guildface, (0, 0))  # Vẽ guildface lên màn hình
+            # Handle gameplay input & buttons
+            selected, wave, speed, pos, drawing, pos_temp, action = workEvents(
+                selected, wave, speed, pos, drawing, pos_temp, hud
+            )
 
-                    # Vẽ lên surface_temp (với các nét vẽ của người dùng)
-                    pygame.draw.lines(surface_temp, (22, 62, 80), False, pos_temp, 8)
+            if action == 'pause':
+                game_state = "paused"
+                continue
+            elif action == 'victory':
+                game_over.reset_sound(is_victory=True)
+                game_state = "game_over"
+                continue
 
-            dispText(screen, wave)
-            
-            # Vẽ nút âm thanh
-            sound_button.draw(screen, pygame.mouse.get_pos())
-            # Kiểm tra hình dạng người dùng đã vẽ và xem có đúng không
+            # Draw magic gesture trail while drawing
+            if len(pos_temp) > 2 and drawing:
+                hud.draw_magic_trail(screen, pos)
+                # Keep high-contrast strokes on surface_temp for OpenCV contour analysis
+                pygame.draw.lines(surface_temp, (22, 62, 80), False, pos_temp, 8)
+
+            # Gesture Recognition
             if len(pos_temp) > 10 and not drawing:
                 shape_detected = detect(surface_temp)
 
                 if shape_detected:
                     check_collision_with_enemies(shape_detected, surface_temp, screen, check, rdm)
-                    
-                    if shape_detected == "horizontal":
-                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        shape_correct = True  # Đánh dấu là vẽ đúng
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach ngang", 2, (255, 255, 255))
-                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "vertical":
-                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        shape_correct = True  # Đánh dấu là vẽ đúng
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach dung", 2, (255, 255, 255))
-                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "diagonal_right":
-                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        shape_correct = True  # Đánh dấu là vẽ đúng
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve gach cheo phai", 2, (255, 255, 255))
-                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "v_shape":
-                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        shape_correct = True  # Đánh dấu là vẽ đúng
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve hinh chu V", 2, (255, 255, 255))
-                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-                    elif shape_detected == "circle":
-                        pygame.draw.lines(guildface, (100, 100, 255, alpha), False, pos_temp, 8)
-                        shape_correct = True  # Đánh dấu là vẽ đúng
-                        font = pygame.font.SysFont('arial', 22)
-                        text = font.render("Ban da ve hinh tron", 2, (255, 255, 255))
-                        guildface.blit(text, (screenWidth // 2 - w, screenHeight - 2 * h))
-
-                if shape_correct:  
-                    if alpha > 0:
-                        alpha = max(0, alpha - 80)
-                    else: alpha= 255
-                    check=1
+                    hud.show_feedback(shape_detected)
+                    shape_correct = True
+                    try:
+                        play_sound('sounds/pop2.mp3', 0.4)
+                    except Exception:
+                        pass
                 else:
-                    rdm= random.randint(1, 5)
-                    check=0
-                    alpha = 255
-                    guildface.fill((0,0,0,0)) 
-                    pos_temp = []
-                    surface_temp = pygame.Surface((800, 600)).convert_alpha() 
+                    rdm = random.randint(1, 5)
+                    check = 0
 
-                if alpha == 0:
-                    rdm= random.randint(1, 10)
-                    check=0
-                    surface_temp = pygame.Surface((800, 600)).convert_alpha() 
-                    guildface.fill((0,0,0,0)) 
-                    pos_temp = []  # Reset lại pos_temp sau khi vẽ xong
-                    shape_correct = False  # Reset trạng thái vẽ đúng
-            # Vẽ guildface lên màn hình với alpha đã thay đổi
-            screen.blit(guildface, (0, 0))
+                surface_temp = pygame.Surface((screenWidth, screenHeight)).convert_alpha()
+                surface_temp.fill((0, 0, 0, 0))
+                pos_temp = []
+                shape_correct = False
+
+            # Enemy special countdown events
             event_enemy(screen)
-            cloud_image = pygame.image.load("images/mud.png")
-            cloud_image= pygame.transform.scale(cloud_image, (screenWidth, screenHeight))
-            if draw_cloud()== True:
+
+            # Mud / Smoke cloud overlay
+            if draw_cloud():
                 screen.blit(cloud_image, (0, 0))
-                    
-            # Vẽ thông báo thành tích
+
+            # Modern Top HUD & Bottom Dock
+            is_combat_active = (len(senderList) > 0 or len(enemyList) > 0)
+            hud.draw(screen, player, wave, len(mapvar.waves), speed, is_combat_active, mpos)
+
+            # Achievements toast notifications & progress bar
             achievement_system.draw_notifications(screen)
-            
-            # Vẽ tiến độ thành tích
             achievement_system.draw_progress(screen)
 
-
-            current = pygame.time.get_ticks()
-            if current - spawn > 3000:
+            # Hail / Meteor Shower Updates
+            current_time = pygame.time.get_ticks()
+            if current_time - spawn > 3000:
                 if index_to_draw < min(5, len(hailList)):
-                    spawn = current
-                    index_to_draw += 1  # mỗi 3s cho phép vẽ thêm 5 hail
+                    spawn = current_time
+                    index_to_draw += 1
 
-            # Vẽ các hail được phép vẽ ra
             for i in range(min(index_to_draw, len(hailList))):
-                    hailList[i].move(screen)
-                    hailList[i].draw(screen)
+                hailList[i].move(screen)
+                hailList[i].draw(screen)
+
             for hail in hailList[:]:
-                if hail.x== hail.target[0] and hail.y==hail.target[1]:
+                if hail.x == hail.target[0] and hail.y == hail.target[1]:
                     hailList.remove(hail)
                     explosionList.append(Explosion(hail.x, hail.y))
 
@@ -592,23 +596,27 @@ def main():
                     for enemy in enemyList[:]:
                         if enemy.rect.colliderect(hail.rect):
                             enemy.nextLayer()
-                            if (hail in hailList): 
+                            if hail in hailList:
                                 hailList.remove(hail)
                                 explosionList.append(Explosion(enemy.rect.centerx, enemy.rect.centery))
+
             for explosion in explosionList[:]:
                 explosion.draw(screen)
                 if explosion.is_done():
                     explosionList.remove(explosion)
-                        
+
             pygame.display.flip()
 
+        # ======================================================================
+        # STATE: GAME OVER / VICTORY SCREEN
+        # ======================================================================
         elif game_state == "game_over":
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if game_over.handle_click(event.pos):
+
+                if game_over.handle_event(event):
                         # Reset game state
                         player.health = shop_system.get_total_health()
                         player.money = player.save_system.get_money()
@@ -616,6 +624,7 @@ def main():
                         player.level = 1
                         player.exp = 0
                         player.exp_to_next_level = 1000
+                        wave = 1
                         enemyList.clear()
                         bulletList.clear()
                         iconList.clear()
@@ -623,8 +632,18 @@ def main():
                         startList.clear()
                         hailList.clear()
                         explosionList.clear()
+                        
+                        # Restart background music
+                        if sound_manager.music_enabled:
+                            try:
+                                play_music('music/Ruby_chan1.mp3')
+                            except Exception:
+                                pass
                         game_state = "menu"
 
-            game_over.draw(screen, pygame.mouse.get_pos())
+            game_over.draw(screen, mpos, player)
             pygame.display.flip()
             clock.tick(fps)
+
+if __name__ == '__main__':
+    main()

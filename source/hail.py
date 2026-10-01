@@ -2,43 +2,49 @@ import pygame
 import random
 import math
 from setting import screenWidth, screenHeight, hailList
+# Pre-load meteor images to avoid heavy disk I/O per frame
+_METEOR_IMAGES = None
+
+def get_meteor_images():
+    global _METEOR_IMAGES
+    if _METEOR_IMAGES is None:
+        _METEOR_IMAGES = [
+            pygame.image.load("images/meteor1.png").convert_alpha(),
+            pygame.image.load("images/meteor2.png").convert_alpha(),
+            pygame.image.load("images/meteor3.png").convert_alpha()
+        ]
+    return _METEOR_IMAGES
+
 class Hail:
     def __init__(self, x, y):
         self.x, self.y = random.choice([
             (0, random.randint(-10, int(screenHeight/10))), 
             (random.randint(-10, screenWidth), 0)
         ])
-        self.target= (x, y)
+        self.target = (x, y)
         self.speed = 10
-        self.image = pygame.image.load("images/meteor1.png").convert_alpha()
-        self.rect= self.image.get_rect(center=(self.x, self.y))
-        self.angle= 0
+        self.base_image = random.choice(get_meteor_images())
+        self.image = pygame.transform.scale(self.base_image, (100, 100))
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.angle = 0
 
     def draw(self, screen):
-        img= random.randint(1, 3)
-        if img==1:
-            self.image = pygame.image.load("images/meteor1.png").convert_alpha()
-        elif img==2:
-            self.image = pygame.image.load("images/meteor2.png").convert_alpha()
-        elif img==3:
-            self.image = pygame.image.load("images/meteor3.png").convert_alpha()
-        self.image = pygame.transform.rotate(self.image, 90- math.degrees(math.atan2(self.y, self.x)))
-        self.image = pygame.transform.scale(self.image, (100, 100))
-        if self.angle/math.pi*180 > -180 and self.angle/math.pi*180 < -90:
-            self.image = pygame.transform.flip(self.image, True, False)
-        self.rect= self.image.get_rect(center=(self.x, self.y)) 
-        screen.blit(self.image, self.rect)
+        deg = 90 - math.degrees(math.atan2(self.y, self.x))
+        rotated = pygame.transform.rotate(self.base_image, deg)
+        scaled = pygame.transform.scale(rotated, (100, 100))
+        if -180 < (self.angle / math.pi * 180) < -90:
+            scaled = pygame.transform.flip(scaled, True, False)
+        self.rect = scaled.get_rect(center=(self.x, self.y)) 
+        screen.blit(scaled, self.rect)
 
     def move(self, screen):
         dx = self.target[0] - self.x
         dy = self.target[1] - self.y
 
-        self.angle= -math.atan2(dy, dx)
-        print(self.target)
+        self.angle = -math.atan2(dy, dx)
         x_target = math.cos(self.angle) * self.speed
         y_target = -math.sin(self.angle) * self.speed
-        next_pos = (self.x + x_target, self.y + y_target)
-        distance= math.sqrt(dx**2 + dy**2)
+        distance = math.sqrt(dx**2 + dy**2)
         if distance < self.speed:
             self.x, self.y = self.target
         else:

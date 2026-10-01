@@ -150,74 +150,168 @@ class ShopSystem:
         self.save_system = SaveSystem()
         self.items = self.save_system.get_shop_items()
         self.fonts = {}
-        self.background = pygame.image.load("background/WDT1.PNG")
-        self.background = pygame.transform.scale(self.background, (screenWidth, screenHeight))
+        try:
+            self.background = pygame.image.load("background/Background_MergedForReference.jpg")
+            if pygame.display.get_init():
+                self.background = self.background.convert()
+            self.background = pygame.transform.scale(self.background, (screenWidth, screenHeight))
+        except Exception:
+            self.background = None
+
+        from ui_framework import ModernButton
+        self.btn_back = ModernButton((16, 16, 110, 38), "QUAY LẠI", icon="arrow_left", style="glass", font_size=13, radius=8)
+        self.buy_buttons = {}
         
-    def get_font(self, size):
-        if size not in self.fonts:
-            self.fonts[size] = pygame.font.Font(None, size)
-        return self.fonts[size]
+    def get_font(self, size, bold=True):
+        from ui_framework import get_font
+        return get_font(size, bold=bold)
         
     def draw_shop(self, screen):
-        # Vẽ background
-        screen.blit(self.background, (0, 0))
-        
-        # Vẽ tiêu đề
-        title = self.get_font(48).render("CUA HANG", True, (255, 215, 0))
-        title_rect = title.get_rect(centerx=screen.get_width() // 2, y=70)
-        screen.blit(title, title_rect)
-        
-        # Vẽ số tiền hiện tại
-        current_money = self.save_system.get_money()
-        money_text = self.get_font(36).render(f"Tien: {current_money}", True, (255, 215, 0))
-        money_rect = money_text.get_rect(centerx=screen.get_width() // 2, y=100)
-        screen.blit(money_text, money_rect)
-        
-        # Vẽ số máu hiện tại
-        current_health = self.save_system.get_total_health()
-        health_text = self.get_font(36).render(f"Mau: {current_health}", True, (255, 215, 0))
-        health_rect = health_text.get_rect(centerx=screen.get_width() // 2, y=150)
-        screen.blit(health_text, health_rect)
-        
-        # Vẽ hướng dẫn
-        guide_text = self.get_font(24).render("Nhan ESC de quay lai menu", True, (200, 200, 200))
-        guide_rect = guide_text.get_rect(centerx=screen.get_width() // 2, y=screen.get_height() - 50)
-        screen.blit(guide_text, guide_rect)
-        
-        # Vẽ các item
-        y_offset = 200
-        for item_id, item in self.items.items():
-            # Vẽ background cho item
-            item_bg_image = pygame.image.load('background/Tab2.PNG')
-            item_rect = pygame.Rect(screen.get_width() // 4, y_offset, screen.get_width() // 2, 80)
-            item_bg_scaled = pygame.transform.scale(item_bg_image, item_rect.size)
-            screen.blit(item_bg_scaled, item_rect.topleft)
-            
-            # Vẽ tên item và số lần đã mua
-            name_text = self.get_font(36).render(f"{item['name']} (Da mua: {item['bought']})", True, (255, 255, 255))
-            name_rect = name_text.get_rect(midleft=(item_rect.left + 20, item_rect.centery - 15))
-            screen.blit(name_text, name_rect)
-            
-            # Vẽ giá
-            cost_text = self.get_font(24).render(f"Gia: {item['cost']} tien", True, (255, 215, 0))
-            cost_rect = cost_text.get_rect(midleft=(item_rect.left + 20, item_rect.centery + 15))
-            screen.blit(cost_text, cost_rect)
-            
-            # Vẽ nút mua
-            buy_rect = pygame.Rect(item_rect.right - 100, item_rect.centery - 20, 70, 40)
-            mouse_pos = pygame.mouse.get_pos()
-            
-            if buy_rect.collidepoint(mouse_pos):
-                pygame.draw.rect(screen, (0, 255, 0), buy_rect)  # Hover màu sáng hơn
-            else:
-                pygame.draw.rect(screen, (0, 200, 0), buy_rect)
+        from ui_framework import (
+            COLORS, get_font, draw_glass_card, draw_rounded_rect, 
+            draw_text_with_shadow, draw_icon, ModernButton
+        )
 
-            buy_text = self.get_font(24).render("MUA", True, (255, 255, 255))
-            buy_text_rect = buy_text.get_rect(center=buy_rect.center)
-            screen.blit(buy_text, buy_text_rect)
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Background
+        if self.background:
+            screen.blit(self.background, (0, 0))
+        else:
+            screen.fill(COLORS['bg_dark'])
+
+        # Dark overlay
+        overlay = pygame.Surface((screenWidth, screenHeight), pygame.SRCALPHA)
+        overlay.fill((10, 15, 28, 220))
+        screen.blit(overlay, (0, 0))
+
+        # Top Header Bar
+        header_rect = pygame.Rect(0, 0, screenWidth, 70)
+        draw_glass_card(screen, header_rect, radius=0, bg_color=(15, 23, 42, 230), border_color=COLORS['border_subtle'])
+
+        # Back button
+        self.btn_back.draw(screen, mouse_pos)
+
+        # Title & Subtitle (Left side next to Back button - Never overlaps badges on right)
+        title_font = get_font(20, bold=True)
+        draw_text_with_shadow(screen, "CỬA HÀNG NÂNG CẤP", title_font, COLORS['gold_light'], 
+                              (138, 17), align='topleft')
+        sub_font = get_font(12, bold=False)
+        draw_text_with_shadow(screen, "Gia tăng chỉ số sinh tồn và năng lực phòng thủ căn cứ", sub_font, COLORS['text_muted'], 
+                              (138, 43), align='topleft')
+
+        # Status Badges (Right side of header) - Clean typography, minimal icon usage
+        current_money = self.save_system.get_money()
+        current_health = self.save_system.get_total_health()
+
+        money_badge = pygame.Rect(screenWidth - 256, 16, 120, 38)
+        draw_glass_card(screen, money_badge, radius=8, bg_color=(20, 30, 48, 220), border_color=COLORS['gold_glow'])
+        draw_text_with_shadow(screen, f"{current_money:,} Vàng", get_font(13, bold=True), COLORS['gold_light'], 
+                              (money_badge.centerx, money_badge.centery), align='center')
+
+        hp_badge = pygame.Rect(screenWidth - 126, 16, 110, 38)
+        draw_glass_card(screen, hp_badge, radius=8, bg_color=(20, 30, 48, 220), border_color=COLORS['red_glow'])
+        draw_text_with_shadow(screen, f"Máu: {current_health} HP", get_font(13, bold=True), COLORS['white'], 
+                              (hp_badge.centerx, hp_badge.centery), align='center')
+
+        # Shop Item Cards
+        card_w = 600
+        card_h = 86
+        card_x = (screenWidth - card_w) // 2
+        y_offset = 100
+        spacing = 98
+
+        item_descs = {
+            'health_1': "Tăng thêm +1 Máu tối đa vĩnh viễn cho căn cứ",
+            'health_2': "Tăng thêm +2 Máu tối đa vĩnh viễn cho căn cứ (Ưu đãi 100 G)",
+            'health_3': "Tăng thêm +3 Máu tối đa vĩnh viễn cho căn cứ (Ưu đãi 300 G)"
+        }
+
+        for item_id, item in self.items.items():
+            card_rect = pygame.Rect(card_x, y_offset, card_w, card_h)
+            is_hovered = card_rect.collidepoint(mouse_pos)
             
-            y_offset += 100
-                
+            # Card background
+            card_bg = (30, 45, 70, 240) if is_hovered else (20, 30, 48, 220)
+            card_border = COLORS['border_light'] if is_hovered else COLORS['border_subtle']
+            draw_glass_card(screen, card_rect, radius=12, bg_color=card_bg, border_color=card_border, border_width=1)
+
+            # Item Name and Level (Clean left alignment, no oversized icon container)
+            name_font = get_font(17, bold=True)
+            draw_text_with_shadow(screen, item['name'], name_font, COLORS['white'], 
+                                  (card_rect.x + 24, card_rect.y + 18), align='topleft')
+
+            # Level badge
+            bought_count = item.get('bought', 0)
+            lvl_text = f"Cấp {bought_count}"
+            lvl_font = get_font(11, bold=True)
+            lvl_w = lvl_font.size(lvl_text)[0] + 16
+            lvl_badge = pygame.Rect(card_rect.x + 24 + name_font.size(item['name'])[0] + 10, card_rect.y + 18, lvl_w, 20)
+            draw_rounded_rect(screen, (40, 60, 90), lvl_badge, radius=4, border_color=COLORS['cyan_glow'])
+            draw_text_with_shadow(screen, lvl_text, lvl_font, COLORS['cyan_light'], 
+                                  (lvl_badge.centerx, lvl_badge.centery), align='center')
+
+            # Description
+            desc = item_descs.get(item_id, "Vật phẩm nâng cấp hữu ích")
+            desc_font = get_font(13, bold=False)
+            draw_text_with_shadow(screen, desc, desc_font, COLORS['text_muted'], 
+                                  (card_rect.x + 24, card_rect.y + 46), align='topleft')
+
+            # Cost pill with Gold coin icon
+            cost = item['cost']
+            can_afford = current_money >= cost
+            cost_rect = pygame.Rect(card_rect.right - 235, card_rect.centery - 16, 105, 32)
+            draw_rounded_rect(screen, (15, 23, 42, 200), cost_rect, radius=6, border_color=COLORS['gold_glow'])
+            draw_icon(screen, "gold", cost_rect.x + 16, cost_rect.centery, size=16)
+            draw_text_with_shadow(screen, f"{cost:,} Vàng", get_font(13, bold=True), COLORS['gold_light'], 
+                                  (cost_rect.centerx + 8, cost_rect.centery), align='center')
+
+            # Buy button with tactile press feedback
+            buy_rect = pygame.Rect(card_rect.right - 120, card_rect.centery - 20, 104, 40)
+            btn_style = 'success' if can_afford else 'glass'
+            btn_text = "MUA" if can_afford else "THIẾU TIỀN"
+            if item_id not in self.buy_buttons:
+                self.buy_buttons[item_id] = ModernButton(buy_rect, btn_text, icon=None, 
+                                                         style=btn_style, font_size=13, radius=8, enabled=can_afford)
+            else:
+                self.buy_buttons[item_id].rect = buy_rect
+                self.buy_buttons[item_id].text = btn_text
+                self.buy_buttons[item_id].style = btn_style
+                self.buy_buttons[item_id].enabled = can_afford
+            self.buy_buttons[item_id].draw(screen, mouse_pos)
+
+            y_offset += spacing
+
+        # Footer guide
+        guide_font = get_font(13, bold=False)
+        draw_text_with_shadow(screen, "Mẹo: Máu được nâng cấp sẽ có hiệu lực vĩnh viễn trong mọi màn chơi!", 
+                              guide_font, COLORS['gold_light'], (screenWidth // 2, screenHeight - 48), align='center')
+        draw_text_with_shadow(screen, "Nhấn phím ESC hoặc nút 'QUAY LẠI' ở góc trên để trở về Menu chính", 
+                              get_font(11, bold=False), COLORS['text_dim'], (screenWidth // 2, screenHeight - 26), align='center')
+
+    def handle_event(self, event, player):
+        if self.btn_back.handle_event(event):
+            return 'back'
+
+        for item_id, btn in self.buy_buttons.items():
+            if btn.handle_event(event):
+                item = self.items.get(item_id)
+                if item and player.money >= item['cost']:
+                    if self.buy_item(item_id, player):
+                        try:
+                            from setting import play_sound
+                            play_sound('sounds/buy.mp3', 0.4)
+                        except Exception:
+                            pass
+                else:
+                    try:
+                        from setting import play_sound
+                        play_sound('sounds/life_lost.mp3', 0.3)
+                    except Exception:
+                        pass
+                return True
+        return False
+
     def buy_item(self, item_id, player):
         if item_id in self.items:
             item = self.items[item_id]

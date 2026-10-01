@@ -6,7 +6,10 @@ class Map:
         self.loadmap()
 
     def loadmap(self):
-        self.targets = eval(open('maps/%s/targets.txt' % self.map,'r').read())
+        raw_targets = eval(open('maps/%s/targets.txt' % self.map,'r').read())
+        sx = screenWidth / 700.0
+        sy = screenHeight / 510.0
+        self.targets = [(round(x * sx), round(y * sy)) for (x, y) in raw_targets]
         self.waves = eval(open('maps/%s/waves.txt' % self.map,'r').read())
 
     def getmovelist(self):
@@ -16,7 +19,7 @@ class Map:
             self.pathpoints+=[0]
 
     def get_background(self):
-        background = imgLoad('maps/%s/image.png' % self.map)
-        background2 = imgLoad('maps/%s/image2.png' % self.map).convert_alpha()
-        background3 = imgLoad('maps/%s/image3.png' % self.map).convert_alpha()
+        background = imgLoad('maps/%s/image.png' % self.map, (screenWidth, screenHeight))
+        background2 = imgLoad('maps/%s/image2.png' % self.map, (screenWidth, screenHeight)).convert_alpha()
+        background3 = imgLoad('maps/%s/image3.png' % self.map, (screenWidth, screenHeight)).convert_alpha()
         return background,background2,background3

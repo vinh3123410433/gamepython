@@ -105,50 +105,81 @@ class Enemy:
         
 
     def draw_health_bar(self, screen):
-        bar_width = self.rect.width
+        bar_width = max(24, self.rect.width)
         bar_height = 5
-        current_health_ratio = self.health / self.layers[self.layer][1]
-        pygame.draw.rect(screen, (255, 0, 0), (self.rect.left, self.rect.top - bar_height, bar_width, bar_height))
-        pygame.draw.rect(screen, (0, 255, 0), (self.rect.left, self.rect.top - bar_height, bar_width * current_health_ratio, bar_height))
+        current_health_ratio = max(0.0, min(1.0, self.health / max(1, self.layers[self.layer][1])))
+        
+        # Health Bar with rounded border
+        bar_rect = pygame.Rect(self.rect.centerx - bar_width // 2, self.rect.top - bar_height - 2, bar_width, bar_height)
+        pygame.draw.rect(screen, (30, 40, 55), bar_rect, border_radius=2)
+        pygame.draw.rect(screen, (220, 38, 38), bar_rect, border_radius=2)
+        if current_health_ratio > 0:
+            fill_w = int(bar_width * current_health_ratio)
+            fill_rect = pygame.Rect(bar_rect.x, bar_rect.y, fill_w, bar_height)
+            pygame.draw.rect(screen, (34, 197, 94), fill_rect, border_radius=2)
+        pygame.draw.rect(screen, (15, 23, 42), bar_rect, width=1, border_radius=2)
+
+        # Rune Badge - Semi-transparent dark circular backing for maximum contrast
         line_length = 16
-        line_y = self.rect.top - bar_height - 10
+        line_y = self.rect.top - bar_height - 14
+        
+        badge_r = 13
+        badge_surf = pygame.Surface((badge_r * 2, badge_r * 2), pygame.SRCALPHA)
+        pygame.draw.circle(badge_surf, (15, 23, 42, 210), (badge_r, badge_r), badge_r)
+        pygame.draw.circle(badge_surf, (56, 189, 248, 140), (badge_r, badge_r), badge_r, width=1)
+        screen.blit(badge_surf, (self.rect.centerx - badge_r, line_y - badge_r))
+
+        # Vibrant distinct rune colors for clear visual recognition
+        rune_colors = {
+            0: (56, 189, 248),   # Cyan for Horizontal
+            1: (251, 191, 36),   # Gold for Vertical
+            2: (168, 85, 247),   # Purple for Diagonal
+            3: (244, 63, 94),    # Rose for V-shape
+            4: (52, 211, 153),   # Emerald for Circle
+        }
+        color = rune_colors.get(self.shape_type, (255, 255, 255))
         
         if self.shape_type == 0:
+            # Horizontal line
             pygame.draw.line(screen, (0, 0, 0), 
                            (self.rect.centerx - line_length//2, line_y),
                            (self.rect.centerx + line_length//2, line_y), 5)
-            pygame.draw.line(screen, self.shape_color, 
+            pygame.draw.line(screen, color, 
                            (self.rect.centerx - line_length//2, line_y),
                            (self.rect.centerx + line_length//2, line_y), 3)
         elif self.shape_type == 1:
+            # Vertical line
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx, line_y - line_length//2),
-                           (self.rect.centerx, line_y + line_length//2), 4)
-            pygame.draw.line(screen, self.shape_color,
+                           (self.rect.centerx, line_y + line_length//2), 5)
+            pygame.draw.line(screen, color,
                            (self.rect.centerx, line_y - line_length//2),
-                           (self.rect.centerx, line_y + line_length//2), 2)
+                           (self.rect.centerx, line_y + line_length//2), 3)
         elif self.shape_type == 2:
+            # Diagonal line
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx + line_length//2, line_y + line_length//2), 5)
-            pygame.draw.line(screen, self.shape_color,
+            pygame.draw.line(screen, color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx + line_length//2, line_y + line_length//2), 3)
         elif self.shape_type == 3:
+            # V-shape
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 5)
             pygame.draw.line(screen, (0, 0, 0),
                            (self.rect.centerx + line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 5)
-            pygame.draw.line(screen, self.shape_color,
+            pygame.draw.line(screen, color,
                            (self.rect.centerx - line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 3)
-            pygame.draw.line(screen, self.shape_color,
+            pygame.draw.line(screen, color,
                            (self.rect.centerx + line_length//2, line_y - line_length//2),
                            (self.rect.centerx, line_y + line_length//2), 3)
         elif self.shape_type == 4:
+            # Circle
             pygame.draw.circle(screen, (0, 0, 0),
                              (self.rect.centerx, line_y), line_length//1.5, 5)
-            pygame.draw.circle(screen, self.shape_color,
+            pygame.draw.circle(screen, color,
                              (self.rect.centerx, line_y), line_length//1.5, 3)

@@ -16,8 +16,10 @@ fps = 30
 class SoundManager:
     def __init__(self):
         self.music_enabled = True
+        self.sound_enabled = True
         self.music_volume = 0.65
         self.sound_volume = 0.5
+        self._sound_cache = {}
         self.load_settings()
 
     def load_settings(self):
@@ -25,6 +27,7 @@ class SoundManager:
             with open('settings.json', 'r') as f:
                 settings = json.load(f)
                 self.music_enabled = settings.get('music_enabled', True)
+                self.sound_enabled = settings.get('sound_enabled', True)
                 self.music_volume = settings.get('music_volume', 0.65)
                 self.sound_volume = settings.get('sound_volume', 0.5)
         except:
@@ -33,36 +36,77 @@ class SoundManager:
     def save_settings(self):
         settings = {
             'music_enabled': self.music_enabled,
+            'sound_enabled': self.sound_enabled,
             'music_volume': self.music_volume,
             'sound_volume': self.sound_volume
         }
         with open('settings.json', 'w') as f:
-            json.dump(settings, f)
+            json.dump(settings, f, indent=4)
 
-    def toggle_music(self):
-        self.music_enabled = not self.music_enabled
-        if self.music_enabled:
-            self.play_music('music/maintheme.mp3')
-        else:
-            self.stop_music()
+    def set_music_volume(self, volume):
+        self.music_volume = max(0.0, min(1.0, volume))
+        if pygame.mixer.get_init():
+            try:
+                pygame.mixer.music.set_volume(self.music_volume)
+            except Exception:
+                pass
         self.save_settings()
 
-    def play_music(self, file, volume=None, loop=-1):
+    def set_sound_volume(self, volume):
+        self.sound_volume = max(0.0, min(1.0, volume))
+        for sound in self._sound_cache.values():
+            try:
+                sound.set_volume(self.sound_volume)
+            except Exception:
+                pass
+        self.save_settings()
+
+    def set_music_enabled(self, enabled):
+        self.music_enabled = enabled
         if not self.music_enabled:
+            self.stop_music()
+        else:
+            self.play_music('music/maintheme.mp3')
+        self.save_settings()
+
+    def set_sound_enabled(self, enabled):
+        self.sound_enabled = enabled
+        self.save_settings()
+
+    def toggle_music(self):
+        self.set_music_enabled(not self.music_enabled)
+
+    def play_music(self, file, volume=None, loop=-1):
+        if not self.music_enabled or not pygame.mixer.get_init():
             return
-        pygame.mixer.music.load(file)
-        pygame.mixer.music.set_volume(volume if volume is not None else self.music_volume)
-        pygame.mixer.music.play(loop)
+        try:
+            pygame.mixer.music.load(file)
+            vol = volume if volume is not None else self.music_volume
+            pygame.mixer.music.set_volume(vol)
+            pygame.mixer.music.play(loop)
+        except Exception as e:
+            print(f"Không thể phát nhạc: {e}")
 
     def play_sound(self, file, volume=None):
-        if not self.music_enabled:
+        if not self.sound_enabled or not pygame.mixer.get_init():
             return
-        sound = pygame.mixer.Sound(file)
-        sound.set_volume(volume if volume is not None else self.sound_volume)
-        sound.play()
+        try:
+            if file not in self._sound_cache:
+                self._sound_cache[file] = pygame.mixer.Sound(file)
+            sound = self._sound_cache[file]
+            vol = volume if volume is not None else self.sound_volume
+            sound.set_volume(vol)
+            sound.play()
+        except Exception as e:
+            # Silently handle audio issues without crash
+            pass
 
     def stop_music(self):
-        pygame.mixer.music.stop()
+        if pygame.mixer.get_init():
+            try:
+                pygame.mixer.music.stop()
+            except Exception:
+                pass
 
 # Tạo instance của SoundManager
 sound_manager = SoundManager()

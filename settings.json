@@ -1,1 +1,6 @@
-{"music_enabled": false, "music_volume": 0.65, "sound_volume": 0.5}
+{
+    "music_enabled": false,
+    "sound_enabled": true,
+    "music_volume": 0.0967741935483871,
+    "sound_volume": 0.5
+}
